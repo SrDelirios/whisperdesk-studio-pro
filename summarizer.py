@@ -60,7 +60,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         return cleaned.strip()
 
     @staticmethod
-    def _optimize_context_for_ollama(transcript: str, max_chars: int = 40000) -> str:
+    def _optimize_context_for_ollama(transcript: str, max_chars: int = 80000) -> str:
         """Prepara el contexto para Ollama local optimizando memoria sin perder partes vitales."""
         clean = transcript.strip()
         if len(clean) <= max_chars:
@@ -70,21 +70,22 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         if not lines:
             return clean[:max_chars]
 
-        # 1. Apertura e introduccion (primeros 8000 caracteres)
+        # 1. Apertura e introduccion (primeros 16000 caracteres)
         head = []
         head_len = 0
         for l in lines:
             head.append(l)
             head_len += len(l)
-            if head_len >= 8000:
+            if head_len >= 16000:
                 break
 
-        # 2. Extractos intermedios con palabras de accion, compromisos y decisiones (~22000 caracteres)
+        # 2. Extractos intermedios con palabras de accion, compromisos y decisiones (~44000 caracteres)
         action_keywords = [
             'acuerd', 'comprom', 'hacer', 'revis', 'enviar', 'pago', 'entrega', 'mañana',
             'semana', 'tarea', 'responsable', 'decidi', 'conclusi', 'aprob', 'confirm',
             'defin', 'objetivo', 'desembol', 'proyecto', 'presupuesto', 'fase', 'precio',
-            'contrato', 'equipo', 'cliente', 'desarrollo', 'tiempo', 'fecha'
+            'contrato', 'equipo', 'cliente', 'desarrollo', 'tiempo', 'fecha', 'costo',
+            'mamut', 'plazo', 'informe', 'taller', 'archivo', 'digitaliz'
         ]
         middle = []
         middle_len = 0
@@ -93,16 +94,16 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             if any(k in l.lower() for k in action_keywords):
                 middle.append(l)
                 middle_len += len(l)
-                if middle_len >= 22000:
+                if middle_len >= 44000:
                     break
 
-        # 3. Cierre y conclusiones (~10000 caracteres)
+        # 3. Cierre y conclusiones (~20000 caracteres)
         tail = []
         tail_len = 0
         for l in reversed(lines[-50:]):
             tail.insert(0, l)
             tail_len += len(l)
-            if tail_len >= 10000:
+            if tail_len >= 20000:
                 break
 
         combined_parts = []
@@ -146,10 +147,8 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     name = m.get('name', '').replace('models/', '')
                     low = name.lower()
                     
-                    # Filtrar exclusivamente modelos para generación de texto/actas
                     if 'generateContent' not in methods:
                         continue
-                    # Descartar modelos de audio/tts, imágenes o herramientas internas
                     if any(bad in low for bad in ['tts', 'image', 'nano-banana', 'embed', 'imagen', 'aqa', 'robotics', 'customtools']):
                         continue
                         
@@ -189,7 +188,6 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             raw_gemini = MeetingActaSummarizer.get_gemini_models_raw(api_key=gemini_key)
             for m in raw_gemini:
                 m_id = m['id'].lower()
-                # Priorizar los modelos más capaces y recientes como Recomendados
                 is_top = any(k in m_id for k in [
                     '3.1-pro', '3-pro', '3-flash', 'flash-latest', 'pro-latest',
                     '2.5-pro', '2.5-flash', '2.0-flash', '2.0-pro'
@@ -262,7 +260,6 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             yield {"token": "⚠️ La transcripción está vacía.", "done": True}
             return
 
-        # Limpieza y extracción dinámica del nombre del modelo
         clean_model = model_name.replace("✨", "").replace("⭐", "").replace("☁️", "").strip()
         if "(" in clean_model:
             clean_model = clean_model.split("(")[0].strip()
@@ -297,7 +294,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         }
 
         try:
-            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, stream=True, timeout=(10, 120))
+            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, stream=True, timeout=(10, 180))
             if r.status_code != 200:
                 err_text = r.text
                 try:
@@ -366,7 +363,6 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         error_msg = None
 
         try:
-            # Timeout generoso (45s para carga en VRAM, 180s para streaming)
             r = requests.post(
                 f"{host}/api/generate",
                 json={
@@ -376,12 +372,12 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     "options": {
                         "temperature": 0.2,
                         "top_p": 0.9,
-                        "num_ctx": 16384,
-                        "num_predict": 2500
+                        "num_ctx": 32768,
+                        "num_predict": 8192
                     }
                 },
                 stream=True,
-                timeout=(45, 180)
+                timeout=(45, 240)
             )
 
             if r.status_code == 200:
@@ -406,7 +402,6 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         except Exception as e:
             error_msg = f"No se pudo comunicar con Ollama ({clean_model}): {str(e)}"
 
-        # Si falló Ollama, notificar y ofrecer fallback explícito
         if not has_streamed_any:
             fallback = MeetingActaSummarizer.generate_heuristic_summary(transcript, title=title, duration=duration, participants=participants)
             if error_msg:
