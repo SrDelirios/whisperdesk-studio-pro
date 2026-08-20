@@ -9,12 +9,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 def start_server():
-    """Inicia el servidor Flask en segundo plano."""
+    """Inicia el servidor Flask en segundo plano con soporte multihilo."""
     from app import app
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
-    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False, threaded=True)
 
 def main():
     # Iniciar servidor en hilo daemon

@@ -46,7 +46,7 @@ def start_server():
     app.run(host='127.0.0.1', port=PORT, debug=False, use_reloader=False, threaded=True)
 
 def apply_window_icon():
-    """Aplica el icono nativo .ico al HWND de la ventana para la barra de tareas y el título."""
+    """Aplica el icono nativo .ico al HWND de la ventana de forma asíncrona y no bloqueante para evitar freeze."""
     if not os.path.exists(ICON_PATH):
         return
 
@@ -56,20 +56,23 @@ def apply_window_icon():
     IMAGE_ICON = 1
     LR_LOADFROMFILE = 0x00000010
 
-    # Cargar recursos de icono nativo de 16x16 y 32x32
-    hicon_small = ctypes.windll.user32.LoadImageW(0, ICON_PATH, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
-    hicon_big = ctypes.windll.user32.LoadImageW(0, ICON_PATH, IMAGE_ICON, 32, 32, LR_LOADFROMFILE)
+    try:
+        # Cargar recursos de icono nativo de 16x16 y 32x32
+        hicon_small = ctypes.windll.user32.LoadImageW(0, ICON_PATH, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+        hicon_big = ctypes.windll.user32.LoadImageW(0, ICON_PATH, IMAGE_ICON, 32, 32, LR_LOADFROMFILE)
 
-    # Esperar a que la ventana de WebView2 esté creada y aplicar los iconos
-    for _ in range(60):
-        time.sleep(0.1)
-        hwnd = ctypes.windll.user32.FindWindowW(None, "WhisperDesk Studio Pro")
-        if hwnd:
-            if hicon_small:
-                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon_small)
-            if hicon_big:
-                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon_big)
-            break
+        # Esperar a que la ventana de WebView2 esté creada y aplicar los iconos con PostMessageW (no bloqueante)
+        for _ in range(30):
+            time.sleep(0.2)
+            hwnd = ctypes.windll.user32.FindWindowW(None, "WhisperDesk Studio Pro")
+            if hwnd:
+                if hicon_small:
+                    ctypes.windll.user32.PostMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon_small)
+                if hicon_big:
+                    ctypes.windll.user32.PostMessageW(hwnd, WM_SETICON, ICON_BIG, hicon_big)
+                break
+    except Exception:
+        pass
 
 class DesktopBridge:
     """Puente JS para ejecutar operaciones nativas del sistema de archivos instantáneamente."""
