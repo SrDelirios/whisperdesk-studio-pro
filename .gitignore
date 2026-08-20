@@ -1,0 +1,70 @@
+# Python temporaries
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build & Dist artifacts
+build/
+dist/
+*.spec
+*.exe
+*.log
+
+# Databases & Runtime Storage
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+whisper_sessions.db
+.sessions_index.json
+
+# Audio & Video media files
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.aac
+*.wma
+
+# Output and Uploads runtime storage
+uploads/*
+!uploads/.gitkeep
+output/*
+!output/.gitkeep
+output/
+
+# Personal test documents & exports
+*.pdf
+transcripcion*.txt
+Acta_*.pdf
+acta_*.pdf
+
+# Local configuration
+config.json
+
+# Backup versions
+versions/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
