@@ -98,7 +98,7 @@ def index():
 
 @app.route('/api/hardware', methods=['GET'])
 def get_hardware_status():
-    """Retorna información en tiempo real sobre la GPU (CUDA) y Ollama."""
+    """Retorna información en tiempo real sobre la GPU (CUDA), Ollama y Gemini."""
     cuda_available = False
     device_name = "CPU"
     vram_info = "N/A"
@@ -114,7 +114,11 @@ def get_hardware_status():
     except Exception:
         pass
 
-    models = MeetingActaSummarizer.get_ollama_models()
+    cfg = load_app_config()
+    gemini_key = cfg.get("gemini_api_key", "")
+    gemini_configured = bool(gemini_key and gemini_key.strip())
+
+    models = MeetingActaSummarizer.get_available_models(gemini_key=gemini_key)
     ollama_connected = any("Ollama:" in m for m in models)
 
     return jsonify({
@@ -122,8 +126,42 @@ def get_hardware_status():
         "gpu": device_name,
         "vram": vram_info,
         "ollama_connected": ollama_connected,
-        "ollama_models": models
+        "gemini_configured": gemini_configured,
+        "ollama_models": models,
+        "ai_models": models
     })
+
+@app.route('/api/gemini/test', methods=['POST'])
+def test_gemini_api():
+    """Prueba si una API key de Google Gemini es válida y tiene cuota."""
+    data = request.json or {}
+    api_key = data.get('api_key', '').strip()
+    if not api_key:
+        cfg = load_app_config()
+        api_key = cfg.get('gemini_api_key', '').strip()
+
+    if not api_key:
+        return jsonify({"success": False, "error": "No se proporcionó ninguna API Key"}), 400
+
+    try:
+        import requests
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": "Hola, responde OK"}]}],
+            "generationConfig": {"maxOutputTokens": 10}
+        }
+        r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+        if r.status_code == 200:
+            return jsonify({"success": True, "message": "Conexión exitosa con Google Gemini 2.0 Flash"})
+        else:
+            err_msg = r.text
+            try:
+                err_msg = r.json().get('error', {}).get('message', r.text)
+            except Exception:
+                pass
+            return jsonify({"success": False, "error": f"Error de Gemini ({r.status_code}): {err_msg}"}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Error de red al conectar con Google Gemini: {str(e)}"}), 500
 
 @app.route('/api/ollama/start', methods=['POST'])
 @app.route('/api/start-ollama', methods=['POST'])
@@ -135,13 +173,15 @@ def start_ollama():
             subprocess.Popen([ollama_bin, "serve"], creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
             for _ in range(4):
                 time.sleep(1.0)
-                models = MeetingActaSummarizer.get_ollama_models()
+                cfg = load_app_config()
+                models = MeetingActaSummarizer.get_available_models(gemini_key=cfg.get("gemini_api_key", ""))
                 if any("Ollama:" in m for m in models):
                     return jsonify({"status": "started", "models": models})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-    models = MeetingActaSummarizer.get_ollama_models()
+    cfg = load_app_config()
+    models = MeetingActaSummarizer.get_available_models(gemini_key=cfg.get("gemini_api_key", ""))
     return jsonify({"status": "checked", "models": models})
 
 @app.route('/api/models', methods=['GET'])
@@ -408,6 +448,7 @@ def transcribe():
                         dest_folder = os.path.join(output_root, make_safe_filename(project))
                     else:
                         dest_folder = output_root
+
                     os.makedirs(dest_folder, exist_ok=True)
 
                     output_filepath = os.path.join(dest_folder, output_filename)
@@ -493,33 +534,46 @@ def generate_summary():
 
 @app.route('/api/summarize_stream', methods=['POST'])
 def generate_summary_stream():
-    """Genera el Acta Oficial transmitiendo tokens por Server-Sent Events en tiempo real."""
+    """Genera el Acta Oficial transmitiendo tokens por Server-Sent Events en tiempo real con Gemini u Ollama."""
     data = request.json or {}
     transcript = data.get('text', '')
     title = data.get('title', 'Reunión de Trabajo')
     duration = data.get('duration', 'N/A')
-    model = data.get('model', 'llama3.2:latest')
+    model = data.get('model', 'gemini-2.0-flash')
     session_id = data.get('session_id')
 
     if not transcript:
         return jsonify({"error": "Falta el texto de transcripción"}), 400
 
+    cfg = load_app_config()
+    gemini_key = cfg.get('gemini_api_key', '')
+
     def event_stream():
         accumulated_summary = []
         try:
-            if "Offline" in model or "Heurístico" in model or "Desconectado" in model:
+            if "Gemini" in model or "gemini" in model.lower():
+                for chunk in MeetingActaSummarizer.stream_summary_gemini(
+                    transcript, title=title, duration=duration, model_name=model, api_key=gemini_key
+                ):
+                    if chunk.get('token'):
+                        accumulated_summary.append(chunk['token'])
+                    yield f"data: {json.dumps(chunk)}\n\n"
+            elif "Offline" in model or "Heurístico" in model or "Desconectado" in model:
                 acta = MeetingActaSummarizer.generate_heuristic_summary(transcript, title=title, duration=duration)
                 accumulated_summary.append(acta)
                 yield f"data: {json.dumps({'token': acta, 'done': True})}\n\n"
             else:
-                for chunk in MeetingActaSummarizer.stream_summary_ollama(transcript, title=title, duration=duration, model=model):
+                for chunk in MeetingActaSummarizer.stream_summary_ollama(
+                    transcript, title=title, duration=duration, model=model
+                ):
                     if chunk.get('token'):
                         accumulated_summary.append(chunk['token'])
                     yield f"data: {json.dumps(chunk)}\n\n"
         except Exception as e:
             fallback = MeetingActaSummarizer.generate_heuristic_summary(transcript, title=title, duration=duration)
             accumulated_summary.append(fallback)
-            yield f"data: {json.dumps({'token': fallback, 'done': True})}\n\n"
+            err_msg = f"> ⚠️ Error inesperado: {str(e)}\n\n" + fallback
+            yield f"data: {json.dumps({'token': err_msg, 'done': True})}\n\n"
         finally:
             if session_id and accumulated_summary:
                 try:
@@ -578,10 +632,15 @@ def delete_session(session_id):
 def get_settings():
     """Obtiene la configuración actual de rutas y preferencias."""
     cfg = load_app_config()
+    gemini_key = cfg.get("gemini_api_key", "")
+    masked_key = (gemini_key[:6] + "..." + gemini_key[-4:]) if len(gemini_key) > 10 else ("Configurada" if gemini_key else "")
     return jsonify({
         "output_folder": get_output_folder(),
         "default_output_folder": DEFAULT_OUTPUT_FOLDER,
-        "default_model": cfg.get("default_model", "large-v3-turbo")
+        "default_model": cfg.get("default_model", "large-v3-turbo"),
+        "gemini_configured": bool(gemini_key and gemini_key.strip()),
+        "gemini_key_masked": masked_key,
+        "gemini_api_key": gemini_key
     })
 
 @app.route('/api/settings', methods=['POST'])
@@ -597,6 +656,9 @@ def update_settings():
         os.makedirs(new_folder, exist_ok=True)
         cfg['output_folder'] = new_folder
 
+    if 'gemini_api_key' in data:
+        cfg['gemini_api_key'] = data['gemini_api_key'].strip()
+
     if data.get('default_model'):
         cfg['default_model'] = data['default_model']
 
@@ -604,7 +666,8 @@ def update_settings():
     return jsonify({
         "success": True,
         "output_folder": get_output_folder(),
-        "default_output_folder": DEFAULT_OUTPUT_FOLDER
+        "default_output_folder": DEFAULT_OUTPUT_FOLDER,
+        "gemini_configured": bool(cfg.get('gemini_api_key'))
     })
 
 @app.route('/api/select-folder', methods=['POST'])
