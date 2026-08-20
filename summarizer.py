@@ -5,7 +5,7 @@ import requests
 import threading
 
 class MeetingActaSummarizer:
-    """Generador de Actas Oficiales de Sesion con soporte para Google Gemini (AI Studio) y Ollama Local."""
+    """Generador de Actas Oficiales de Sesión con soporte para Google Gemini (AI Studio) y Ollama Local."""
 
     ACTA_PROMPT_TEMPLATE = """Eres un asistente ejecutivo senior de nivel directivo y analista experto en sintesis de reuniones corporativas.
 Tu objetivo es redactar un Acta Oficial de Sesion exhaustiva, fidedigna, profunda y estructurada en espanol a partir de la transcripcion adjunta.
@@ -15,34 +15,34 @@ REGLAS FUNDAMENTALES DE REDACCION:
 2. PROFUNDIDAD EJECUTIVA: Evita generalidades, frases vagas o plantillas vacias. Incluye detalles concretos, cifras, tecnologias, herramientas, acuerdos especificos, problemas analizados y planes de accion reales mencionados en la sesion.
 3. ESTRUCTURA Y FORMATO MARKDOWN: Sigue rigurosamente la siguiente estructura:
 
-# 📜 ACTA OFICIAL DE SESION: {title}
-**Fecha:** {date}  |  **Duracion:** {duration}  |  **Participantes Identificados:** {participants}
+# ACTA OFICIAL DE SESION: {title}
+**Fecha:** {date}  |  **Duracion:** {duration}  |  **Participantes:** {participants}
 
 ---
 
-### 📌 1. SINTESIS EJECUTIVA & PROPOSITO DE LA REUNION
+### 1. SINTESIS EJECUTIVA Y CONTEXTO
 [Redacta 2 a 4 parrafos detallados explicando con total precision el objetivo central de la sesion, el contexto del proyecto o discusion, los antecedentes analizados y el estado general de las iniciativas tratadas].
 
-### 👥 2. PARTICIPANTES Y ROLES EN LA SESION
+### 2. PARTICIPANTES Y ROLES EN LA SESION
 - **[Nombre o Hablante]**: [Perfil, rol expuesto o aportes principales realizados durante la sesion].
 - **[Nombre o Hablante]**: [Perfil, rol expuesto o aportes principales realizados durante la sesion].
 
-### 📋 3. TEMAS TRATADOS Y DISCUSION DETALLADA (ORDEN CRONOLOGICO)
+### 3. TEMAS TRATADOS Y DISCUSION DETALLADA
 - **[Tema / Bloque 1]**: [Explicacion detallada y profunda de lo conversado, posturas de los participantes, detalles tecnicos, presupuestales o creativos expuestos].
 - **[Tema / Bloque 2]**: [Explicacion detallada y profunda de lo conversado...].
 - **[Tema / Bloque 3]**: [Explicacion detallada y profunda de lo conversado...].
 
-### 🎯 4. ACUERDOS Y DECISIONES CLAVE
+### 4. ACUERDOS Y DECISIONES CLAVE
 - **[Acuerdo 1]**: [Decision concreta tomada y justificacion o consenso alcanzado].
 - **[Acuerdo 2]**: [Decision concreta tomada y justificacion o consenso alcanzado].
 
-### ✅ 5. MATRIZ DE COMPROMISOS Y PROXIMAS TAREAS (ACTION ITEMS)
+### 5. MATRIZ DE COMPROMISOS Y RESPONSABILIDADES (ACTION ITEMS)
 - [ ] **[Responsable / Encargado]**: [Tarea especifica y accionable] — *Plazo / Fecha tentativa:* [Fecha mencionada o 'Por coordinar'].
 - [ ] **[Responsable / Encargado]**: [Tarea especifica y accionable] — *Plazo / Fecha tentativa:* [Fecha mencionada o 'Por coordinar'].
 
-### 💡 6. PUNTOS CRITICOS, DUDAS Y TEMAS PENDIENTES
-- **[Asunto pendiente / Duda 1]**: [Detalle de los puntos que requieren validacion, desembolso, cotizaciones o seguimiento en el proximo encuentro].
-- **[Asunto pendiente / Duda 2]**: [Detalle de los puntos...].
+### 6. PUNTOS CRITICOS Y ASUNTOS PENDIENTES
+- **[Asunto pendiente 1]**: [Detalle de los puntos que requieren validacion, desembolso, cotizaciones o seguimiento en el proximo encuentro].
+- **[Asunto pendiente 2]**: [Detalle de los puntos...].
 
 ======================================================================
 TRANSCRIPCION COMPLETA DE LA SESION:
@@ -200,7 +200,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     disp_name = m.get('displayName', name)
                     valid_models.append({
                         "id": name,
-                        "name": f"✨ {name} ({disp_name})",
+                        "name": f"{name} ({disp_name})",
                         "display": disp_name
                     })
 
@@ -223,12 +223,12 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             pass
 
         return [
-            {"id": "gemini-3.7-flash", "name": "✨ gemini-3.7-flash (Gemini 3.7 Flash)", "display": "Gemini 3.7 Flash"},
-            {"id": "gemini-3.6-flash", "name": "✨ gemini-3.6-flash (Gemini 3.6 Flash)", "display": "Gemini 3.6 Flash"},
-            {"id": "gemini-3.1-pro-preview", "name": "✨ gemini-3.1-pro-preview (Gemini 3.1 Pro Preview)", "display": "Gemini 3.1 Pro Preview"},
-            {"id": "gemini-3-flash-preview", "name": "✨ gemini-3-flash-preview (Gemini 3 Flash Preview)", "display": "Gemini 3 Flash Preview"},
-            {"id": "gemini-flash-latest", "name": "✨ gemini-flash-latest (Gemini Flash Latest)", "display": "Gemini Flash Latest"},
-            {"id": "gemini-pro-latest", "name": "✨ gemini-pro-latest (Gemini Pro Latest)", "display": "Gemini Pro Latest"}
+            {"id": "gemini-3.7-flash", "name": "gemini-3.7-flash (Gemini 3.7 Flash)", "display": "Gemini 3.7 Flash"},
+            {"id": "gemini-3.6-flash", "name": "gemini-3.6-flash (Gemini 3.6 Flash)", "display": "Gemini 3.6 Flash"},
+            {"id": "gemini-3.1-pro-preview", "name": "gemini-3.1-pro-preview (Gemini 3.1 Pro Preview)", "display": "Gemini 3.1 Pro Preview"},
+            {"id": "gemini-3-flash-preview", "name": "gemini-3-flash-preview (Gemini 3 Flash Preview)", "display": "Gemini 3 Flash Preview"},
+            {"id": "gemini-flash-latest", "name": "gemini-flash-latest (Gemini Flash Latest)", "display": "Gemini Flash Latest"},
+            {"id": "gemini-pro-latest", "name": "gemini-pro-latest (Gemini Pro Latest)", "display": "Gemini Pro Latest"}
         ]
 
     @staticmethod
@@ -239,7 +239,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
 
     @staticmethod
     def get_structured_models(ollama_host="http://localhost:11434", gemini_key=""):
-        """Retorna los modelos organizados con valores puros de ID."""
+        """Retorna los modelos organizados con valores puros de ID sin emojis."""
         recommended = []
         cloud_other = []
         local_models = []
@@ -250,7 +250,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             for m in raw_gemini:
                 recommended.append({
                     "value": m['id'],
-                    "label": f"⭐ {m['id']} — {m['display']}",
+                    "label": f"{m['display']} (Google AI Studio)",
                     "is_recommended": True
                 })
 
@@ -261,20 +261,20 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             if is_rec_local:
                 recommended.append({
                     "value": om,
-                    "label": f"⭐ Ollama: {om} (Local GPU)",
+                    "label": f"{om} (Local GPU)",
                     "is_recommended": True
                 })
             else:
                 local_models.append({
                     "value": om,
-                    "label": f"🦙 Ollama: {om}"
+                    "label": f"{om} (Local)"
                 })
 
         return {
             "recommended": recommended,
             "cloud_other": cloud_other,
             "local_models": local_models,
-            "offline": [{"value": "📝 Resumen Heuristico Offline", "label": "📝 Resumen Heurístico Offline"}]
+            "offline": [{"value": "Resumen Heuristico Offline", "label": "Resumen Heurístico (Offline)"}]
         }
 
     @staticmethod
@@ -289,8 +289,8 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         for item in structured.get('local_models', []):
             flat.append(item['value'])
         if not flat and not (gemini_key and gemini_key.strip()):
-            flat.append("⚠️ Ollama Desconectado (Configura Gemini en Ajustes)")
-        flat.append("📝 Resumen Heuristico Offline")
+            flat.append("Ollama Desconectado (Configura Gemini en Ajustes)")
+        flat.append("Resumen Heuristico Offline")
         return flat
 
     # =========================================================================
@@ -494,17 +494,17 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         else:
             overview_text = "Sesión de trabajo y seguimiento de actividades generales del proyecto."
 
-        acta_text = f"""# 📜 ACTA OFICIAL DE SESIÓN (Heurístico Offline): {title}
-**Fecha:** Hoy  |  **Duración:** {duration}  |  **Participantes:** {participants}
+        acta_text = f"""# ACTA EJECUTIVA DE SESION (MODO OFFLINE): {title}
+**Fecha:** Hoy  |  **Duracion:** {duration}  |  **Participantes:** {participants}
 
 ---
 
-### 📌 1. SÍNTESIS EJECUTIVA
+### 1. SINTESIS EJECUTIVA
 {overview_text}
 
 ---
 
-### 🎯 2. ACUERDOS Y DECISIONES CLAVE
+### 2. ACUERDOS Y DECISIONES PRINCIPALES
 """
         if decisions:
             for d in decisions[:6]:
@@ -513,7 +513,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             acta_text += "- Se revisaron los avances principales y la continuidad de las actividades planteadas.\n"
             acta_text += "- Se acordó mantener seguimiento continuo sobre los entregables del proyecto.\n"
 
-        acta_text += "\n### ✅ 3. COMPROMISOS Y TAREAS ASIGNADAS (ACTION ITEMS)\n"
+        acta_text += "\n### 3. COMPROMISOS Y TAREAS ASIGNADAS (ACTION ITEMS)\n"
         if actions:
             for a in actions[:8]:
                 acta_text += f"- [ ] {a}\n"
@@ -524,7 +524,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         acta_text += """
 ---
 
-### 💡 4. PUNTOS CRÍTICOS Y TEMAS PENDIENTES
+### 4. PUNTOS CRITICOS Y ASUNTOS PENDIENTES
 - Confirmar agenda y fecha para la próxima sesión de revisión.
 - Validar requerimientos técnicos y documentación correspondiente.
 """
