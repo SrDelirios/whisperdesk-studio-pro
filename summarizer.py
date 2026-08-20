@@ -60,9 +60,9 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         return cleaned.strip()
 
     @staticmethod
-    def _optimize_context_for_ollama(transcript: str, max_chars: int = 250000) -> str:
-        """Prepara el contexto para Ollama local optimizando memoria para audios de hasta 5-6 horas sin perder partes vitales."""
-        clean = transcript.strip()
+    def _optimize_context_for_ollama(transcript: str, max_chars: int = 15000) -> str:
+        """Prepara el contexto para Ollama local optimizando memoria para audios de cualquier duración sin exceder la VRAM."""
+        clean = MeetingActaSummarizer._clean_transcript_text(transcript)
         if len(clean) <= max_chars:
             return clean
 
@@ -70,16 +70,16 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         if not lines:
             return clean[:max_chars]
 
-        # 1. Apertura e introduccion (primeros 40000 caracteres)
+        # 1. Apertura e introducción (primeros 3500 caracteres)
         head = []
         head_len = 0
         for l in lines:
             head.append(l)
             head_len += len(l)
-            if head_len >= 40000:
+            if head_len >= 3500:
                 break
 
-        # 2. Extractos intermedios con palabras de accion, compromisos y decisiones (~150000 caracteres)
+        # 2. Extractos intermedios con palabras clave de acuerdos, decisiones y compromisos (8000 caracteres)
         action_keywords = [
             'acuerd', 'comprom', 'hacer', 'revis', 'enviar', 'pago', 'entrega', 'mañana',
             'semana', 'tarea', 'responsable', 'decidi', 'conclusi', 'aprob', 'confirm',
@@ -90,21 +90,21 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         ]
         middle = []
         middle_len = 0
-        mid_lines = lines[len(head):-100] if len(lines) > 200 else []
+        mid_lines = lines[len(head):-30] if len(lines) > 60 else []
         for l in mid_lines:
             if any(k in l.lower() for k in action_keywords):
                 middle.append(l)
                 middle_len += len(l)
-                if middle_len >= 150000:
+                if middle_len >= 8000:
                     break
 
-        # 3. Cierre y conclusiones (~60000 caracteres)
+        # 3. Cierre y conclusiones (3500 caracteres)
         tail = []
         tail_len = 0
-        for l in reversed(lines[-100:]):
+        for l in reversed(lines[-30:]):
             tail.insert(0, l)
             tail_len += len(l)
-            if tail_len >= 60000:
+            if tail_len >= 3500:
                 break
 
         combined_parts = []
@@ -302,11 +302,11 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                               model_name: str = "gemini-flash-latest", api_key: str = ""):
         """Genera el Acta Oficial transmitiendo tokens en tiempo real desde Google Gemini API."""
         if not api_key or not api_key.strip():
-            yield {"token": "❌ Se requiere una API Key de Google Gemini. Configúrala en la pestaña de Ajustes.", "done": True}
+            yield {"token": "Se requiere una API Key de Google Gemini. Configúrala en la pestaña de Ajustes.", "done": True}
             return
 
         if not transcript or not transcript.strip():
-            yield {"token": "⚠️ La transcripción está vacía.", "done": True}
+            yield {"token": "La transcripción está vacía.", "done": True}
             return
 
         clean_model = model_name.replace("✨", "").replace("⭐", "").replace("☁️", "").strip()
@@ -351,11 +351,11 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     err_text = err_json.get('error', {}).get('message', r.text)
                 except Exception:
                     pass
-                yield {"token": f"❌ Error de Gemini API ({r.status_code}): {err_text}", "done": True}
+                yield {"token": f"Error de Gemini API ({r.status_code}): {err_text}", "done": True}
                 return
 
             has_tokens = False
-            for raw_line in r.iter_lines():
+            for raw_line in r.iter_lines(chunk_size=1):
                 if not raw_line:
                     continue
                 line = raw_line.decode('utf-8', errors='ignore').strip()
@@ -375,12 +375,12 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                         pass
 
             if not has_tokens:
-                yield {"token": "⚠️ No se recibieron datos de Gemini API.", "done": True}
+                yield {"token": "No se recibieron datos de Gemini API.", "done": True}
             else:
                 yield {"token": "", "done": True}
 
         except Exception as e:
-            yield {"token": f"❌ Error de conexión con Gemini: {str(e)}", "done": True}
+            yield {"token": f"Error de conexión con Gemini: {str(e)}", "done": True}
 
     # =========================================================================
     # OLLAMA LOCAL ENGINE
@@ -394,7 +394,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         optimized_text = MeetingActaSummarizer._optimize_context_for_ollama(transcript)
 
         if not optimized_text:
-            yield {"token": "⚠️ La transcripción está vacía.", "done": True}
+            yield {"token": "La transcripción está vacía.", "done": True}
             return
 
         prompt = MeetingActaSummarizer.ACTA_PROMPT_TEMPLATE.format(
@@ -405,39 +405,31 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             transcript=optimized_text
         )
 
-        # Calcular contexto dinámico optimizado para que quepa 100% en la VRAM de la GPU
-        char_len = len(optimized_text)
-        if char_len < 20000:
-            dyn_ctx = 8192
-        elif char_len < 50000:
-            dyn_ctx = 16384
-        else:
-            dyn_ctx = 32768
-
         has_streamed_any = False
         error_msg = None
 
         try:
-            # Timeout generoso (45s para carga en VRAM, 300s para streaming)
+            # Conexión rápida y streaming continuo con persistencia en memoria
             r = requests.post(
                 f"{host}/api/generate",
                 json={
                     "model": clean_model,
                     "prompt": prompt,
                     "stream": True,
+                    "keep_alive": "60m",
                     "options": {
                         "temperature": 0.2,
                         "top_p": 0.9,
-                        "num_ctx": dyn_ctx,
-                        "num_predict": 4096
+                        "num_ctx": 4096,
+                        "num_predict": 2048
                     }
                 },
                 stream=True,
-                timeout=(45, 300)
+                timeout=(15, 180)
             )
 
             if r.status_code == 200:
-                for line in r.iter_lines():
+                for line in r.iter_lines(chunk_size=1):
                     if line:
                         try:
                             chunk = json.loads(line.decode('utf-8', errors='ignore'))
@@ -458,13 +450,17 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         except Exception as e:
             error_msg = f"No se pudo comunicar con Ollama ({clean_model}): {str(e)}"
 
-        # Si falló Ollama, notificar y ofrecer fallback explícito
+        # Si falló Ollama, notificar y ofrecer fallback ejecutivo limpio sin emojis ni literales \n
         if not has_streamed_any:
             fallback = MeetingActaSummarizer.generate_heuristic_summary(transcript, title=title, duration=duration, participants=participants)
+            clean_notice = ""
             if error_msg:
-                yield {"token": f"> ⚠️ *Aviso del Sistema: {error_msg}. Mostrando síntesis de respaldo.*\\n\\n" + fallback, "done": True}
-            else:
-                yield {"token": fallback, "done": True}
+                if "timeout" in str(error_msg).lower():
+                    clean_notice = f"> Nota: El modelo local ({clean_model}) tardó demasiado tiempo en procesar esta sesión extensa. Se presenta el acta ejecutiva estructurada de respaldo.\n\n"
+                else:
+                    clean_notice = f"> Nota: No se pudo comunicar con el modelo local ({clean_model}). Se presenta el acta ejecutiva estructurada.\n\n"
+            
+            yield {"token": clean_notice + fallback, "done": True}
 
     @staticmethod
     def generate_heuristic_summary(transcript: str, title: str = "Reunion", duration: str = "N/A", participants: str = "Hablantes detectados"):
