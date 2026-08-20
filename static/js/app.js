@@ -1109,6 +1109,22 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Cancelando transcripción...', 'info');
     }
 
+    function getSpeakerInitials(speakerLabel) {
+        if (!speakerLabel) return 'H1';
+        const match = speakerLabel.match(/Hablante\s*(\d+)/i);
+        if (match) {
+            return `H${match[1]}`;
+        }
+        const clean = speakerLabel.replace(/[\(\)¿\?]/g, '').trim();
+        const words = clean.split(/\s+/);
+        if (words.length >= 2) {
+            return (words[0][0] + words[1][0]).toUpperCase();
+        } else if (words.length === 1 && words[0].length > 0) {
+            return words[0].substring(0, 2).toUpperCase();
+        }
+        return 'H1';
+    }
+
     let currentLiveSpeaker = 'Hablante 1';
     let currentLiveBlock = null;
 
@@ -1123,9 +1139,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Si ya hay un bloque del mismo hablante activo en vivo, concatenar fluidamente el texto
         if (currentLiveBlock && currentLiveSpeaker === spk) {
-            const bodyEl = currentLiveBlock.querySelector('.dialogue-body');
-            if (bodyEl) {
-                bodyEl.textContent += ' ' + text;
+            const textEl = currentLiveBlock.querySelector('.dialogue-text') || currentLiveBlock.querySelector('.dialogue-body');
+            if (textEl) {
+                textEl.textContent += ' ' + text;
                 el.viewSpeakersFeed.scrollTop = el.viewSpeakersFeed.scrollHeight;
                 return;
             }
@@ -1134,17 +1150,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Crear nuevo bloque de turno de diálogo
         currentLiveSpeaker = spk;
         const row = document.createElement('div');
-        row.className = 'dialogue-block';
+        row.className = 'dialogue-card';
         row.innerHTML = `
-            <div class="speaker-avatar" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo)">
-                ${spk.substring(0, 2).toUpperCase()}
+            <div class="speaker-avatar-circle speaker-1">
+                ${getSpeakerInitials(spk)}
             </div>
-            <div class="dialogue-content">
+            <div class="dialogue-body">
                 <div class="dialogue-header">
-                    <span class="speaker-name" style="color: var(--accent-indigo)">${escapeHtml(spk)}</span>
-                    <span class="dialogue-timestamp">${formatTime(seg.start || 0)}</span>
+                    <div class="speaker-meta-left">
+                        <span class="speaker-name-tag" style="color: var(--accent-indigo)">${escapeHtml(spk)}</span>
+                    </div>
+                    <span class="timestamp-pill">${formatTime(seg.start || 0)}</span>
                 </div>
-                <div class="dialogue-body">${escapeHtml(text)}</div>
+                <div class="dialogue-text">${escapeHtml(text)}</div>
             </div>
         `;
         el.viewSpeakersFeed.appendChild(row);
@@ -1214,11 +1232,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const turns = groupSegmentsForDisplay(segments);
 
         const colors = [
-            { bg: 'rgba(99, 102, 241, 0.15)', text: '#818CF8' },
-            { bg: 'rgba(6, 182, 212, 0.15)', text: '#22D3EE' },
-            { bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399' },
-            { bg: 'rgba(245, 158, 11, 0.15)', text: '#FBBF24' },
-            { bg: 'rgba(236, 72, 153, 0.15)', text: '#F472B6' }
+            { bg: 'rgba(99, 102, 241, 0.15)', text: '#818CF8', class: 'speaker-1' },
+            { bg: 'rgba(16, 185, 129, 0.15)', text: '#34D399', class: 'speaker-2' },
+            { bg: 'rgba(6, 182, 212, 0.15)', text: '#22D3EE', class: 'speaker-3' },
+            { bg: 'rgba(245, 158, 11, 0.15)', text: '#FBBF24', class: 'speaker-4' },
+            { bg: 'rgba(236, 72, 153, 0.15)', text: '#F472B6', class: 'speaker-1' }
         ];
 
         turns.forEach((turn) => {
@@ -1227,21 +1245,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = colors[speakerIdx % colors.length];
 
             const block = document.createElement('div');
-            block.className = 'dialogue-block';
+            block.className = 'dialogue-card';
             block.innerHTML = `
-                <div class="speaker-avatar" style="background: ${color.bg}; color: ${color.text}">
-                    ${speakerLabel.substring(0, 2).toUpperCase()}
+                <div class="speaker-avatar-circle ${color.class}">
+                    ${getSpeakerInitials(speakerLabel)}
                 </div>
-                <div class="dialogue-content">
+                <div class="dialogue-body">
                     <div class="dialogue-header">
-                        <span class="speaker-name" style="color: ${color.text}">${escapeHtml(speakerLabel)}</span>
-                        <span class="dialogue-timestamp" data-start="${turn.start}" title="Hacer clic para reproducir desde aquí">⏱️ ${formatTime(turn.start)}</span>
+                        <div class="speaker-meta-left">
+                            <span class="speaker-name-tag" style="color: ${color.text}">${escapeHtml(speakerLabel)}</span>
+                        </div>
+                        <span class="timestamp-pill" data-start="${turn.start}" title="Hacer clic para reproducir desde aquí">⏱️ ${formatTime(turn.start)}</span>
                     </div>
-                    <div class="dialogue-body">${escapeHtml(turn.text)}</div>
+                    <div class="dialogue-text">${escapeHtml(turn.text)}</div>
                 </div>
             `;
 
-            block.querySelector('.dialogue-timestamp').addEventListener('click', () => {
+            block.querySelector('.timestamp-pill').addEventListener('click', () => {
                 seekAudioTo(turn.start);
             });
 
