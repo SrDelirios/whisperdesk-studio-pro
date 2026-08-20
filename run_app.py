@@ -14,7 +14,7 @@ def start_server():
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
-    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False, threaded=True)
+    app.run(host='127.0.0.1', port=54123, debug=False, use_reloader=False, threaded=True)
 
 def main():
     # Iniciar servidor en hilo daemon
@@ -34,7 +34,7 @@ def main():
             edge_exe = path
             break
 
-    url = "http://127.0.0.1:5000"
+    url = "http://127.0.0.1:54123"
 
     if edge_exe:
         # Abrir Edge en modo Aplicación nativa de escritorio (sin barra de navegador)
