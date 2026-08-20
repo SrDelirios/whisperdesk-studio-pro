@@ -5,53 +5,53 @@ import requests
 import threading
 
 class MeetingActaSummarizer:
-    """Generador de Actas Oficiales de Sesión con soporte para Google Gemini (AI Studio) y Ollama Local."""
+    """Generador de Actas Oficiales de Sesion con soporte para Google Gemini (AI Studio) y Ollama Local."""
 
-    ACTA_PROMPT_TEMPLATE = """Eres un asistente ejecutivo senior de nivel directivo y analista experto en síntesis de reuniones corporativas.
-Tu objetivo es redactar un Acta Oficial de Sesión exhaustiva, fidedigna, profunda y estructurada en español a partir de la transcripción adjunta.
+    ACTA_PROMPT_TEMPLATE = """Eres un asistente ejecutivo senior de nivel directivo y analista experto en sintesis de reuniones corporativas.
+Tu objetivo es redactar un Acta Oficial de Sesion exhaustiva, fidedigna, profunda y estructurada en espanol a partir de la transcripcion adjunta.
 
-REGLAS FUNDAMENTALES DE REDACCIÓN:
-1. FIDELIDAD Y CONTEXTO REAL: Basa el acta exclusivamente en lo conversado. Identifica y utiliza los nombres reales de los participantes si se presentan o mencionan a lo largo del audio (ej. Gustavo Mejía, Nicolás Ortega, etc.).
-2. PROFUNDIDAD EJECUTIVA: Evita generalidades, frases vagas o plantillas vacías. Incluye detalles concretos, cifras, tecnologías, herramientas, acuerdos específicos, problemas analizados y planes de acción reales mencionados en la sesión.
+REGLAS FUNDAMENTALES DE REDACCION:
+1. FIDELIDAD Y CONTEXTO REAL: Basa el acta exclusivamente en lo conversado. Identifica y utiliza los nombres reales de los participantes si se presentan o mencionan a lo largo del audio (ej. Gustavo Mejia, Nicolas Ortega, etc.).
+2. PROFUNDIDAD EJECUTIVA: Evita generalidades, frases vagas o plantillas vacias. Incluye detalles concretos, cifras, tecnologias, herramientas, acuerdos especificos, problemas analizados y planes de accion reales mencionados en la sesion.
 3. ESTRUCTURA Y FORMATO MARKDOWN: Sigue rigurosamente la siguiente estructura:
 
-# 📜 ACTA OFICIAL DE SESIÓN: {title}
-**Fecha:** {date}  |  **Duración:** {duration}  |  **Participantes Identificados:** {participants}
+# 📜 ACTA OFICIAL DE SESION: {title}
+**Fecha:** {date}  |  **Duracion:** {duration}  |  **Participantes Identificados:** {participants}
 
 ---
 
-### 📌 1. SÍNTESIS EJECUTIVA & PROPÓSITO DE LA REUNIÓN
-[Redacta 2 a 4 párrafos detallados explicando con total precisión el objetivo central de la sesión, el contexto del proyecto o discusión, los antecedentes analizados y el estado general de las iniciativas tratadas].
+### 📌 1. SINTESIS EJECUTIVA & PROPOSITO DE LA REUNION
+[Redacta 2 a 4 parrafos detallados explicando con total precision el objetivo central de la sesion, el contexto del proyecto o discusion, los antecedentes analizados y el estado general de las iniciativas tratadas].
 
-### 👥 2. PARTICIPANTES Y ROLES EN LA SESIÓN
-- **[Nombre o Hablante]**: [Perfil, rol expuesto o aportes principales realizados durante la sesión].
-- **[Nombre o Hablante]**: [Perfil, rol expuesto o aportes principales realizados durante la sesión].
+### 👥 2. PARTICIPANTES Y ROLES EN LA SESION
+- **[Nombre o Hablante]**: [Perfil, rol expuesto o aportes principales realizados durante la sesion].
+- **[Nombre o Hablante]**: [Perfil, rol expuesto o aportes principales realizados durante la sesion].
 
-### 📋 3. TEMAS TRATADOS Y DISCUSIÓN DETALLADA (ORDEN CRONOLÓGICO)
-- **[Tema / Bloque 1]**: [Explicación detallada y profunda de lo conversado, posturas de los participantes, detalles técnicos, presupuestales o creativos expuestos].
-- **[Tema / Bloque 2]**: [Explicación detallada y profunda de lo conversado...].
-- **[Tema / Bloque 3]**: [Explicación detallada y profunda de lo conversado...].
+### 📋 3. TEMAS TRATADOS Y DISCUSION DETALLADA (ORDEN CRONOLOGICO)
+- **[Tema / Bloque 1]**: [Explicacion detallada y profunda de lo conversado, posturas de los participantes, detalles tecnicos, presupuestales o creativos expuestos].
+- **[Tema / Bloque 2]**: [Explicacion detallada y profunda de lo conversado...].
+- **[Tema / Bloque 3]**: [Explicacion detallada y profunda de lo conversado...].
 
 ### 🎯 4. ACUERDOS Y DECISIONES CLAVE
-- **[Acuerdo 1]**: [Decisión concreta tomada y justificación o consenso alcanzado].
-- **[Acuerdo 2]**: [Decisión concreta tomada y justificación o consenso alcanzado].
+- **[Acuerdo 1]**: [Decision concreta tomada y justificacion o consenso alcanzado].
+- **[Acuerdo 2]**: [Decision concreta tomada y justificacion o consenso alcanzado].
 
-### ✅ 5. MATRIZ DE COMPROMISOS Y PRÓXIMAS TAREAS (ACTION ITEMS)
-- [ ] **[Responsable / Encargado]**: [Tarea específica y accionable] — *Plazo / Fecha tentativa:* [Fecha mencionada o 'Por coordinar'].
-- [ ] **[Responsable / Encargado]**: [Tarea específica y accionable] — *Plazo / Fecha tentativa:* [Fecha mencionada o 'Por coordinar'].
+### ✅ 5. MATRIZ DE COMPROMISOS Y PROXIMAS TAREAS (ACTION ITEMS)
+- [ ] **[Responsable / Encargado]**: [Tarea especifica y accionable] — *Plazo / Fecha tentativa:* [Fecha mencionada o 'Por coordinar'].
+- [ ] **[Responsable / Encargado]**: [Tarea especifica y accionable] — *Plazo / Fecha tentativa:* [Fecha mencionada o 'Por coordinar'].
 
-### 💡 6. PUNTOS CRÍTICOS, DUDAS Y TEMAS PENDIENTES
-- **[Asunto pendiente / Duda 1]**: [Detalle de los puntos que requieren validación, desembolso, cotizaciones o seguimiento en el próximo encuentro].
+### 💡 6. PUNTOS CRITICOS, DUDAS Y TEMAS PENDIENTES
+- **[Asunto pendiente / Duda 1]**: [Detalle de los puntos que requieren validacion, desembolso, cotizaciones o seguimiento en el proximo encuentro].
 - **[Asunto pendiente / Duda 2]**: [Detalle de los puntos...].
 
 ======================================================================
-TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
+TRANSCRIPCION COMPLETA DE LA SESION:
 {transcript}
 """
 
     @staticmethod
     def _clean_transcript_text(transcript: str) -> str:
-        """Limpia marcas técnicas para una lectura fluida."""
+        """Limpia marcas tecnicas para una lectura fluida."""
         if not transcript:
             return ""
         cleaned = re.sub(r'⏱\s*\d+:\d+(?::\d+)?\s*\[.*?\]:\s*', '', transcript)
@@ -70,7 +70,7 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
         if not lines:
             return clean[:max_chars]
 
-        # 1. Apertura e introducción (primeros 8000 caracteres)
+        # 1. Apertura e introduccion (primeros 8000 caracteres)
         head = []
         head_len = 0
         for l in lines:
@@ -79,7 +79,7 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
             if head_len >= 8000:
                 break
 
-        # 2. Extractos intermedios con palabras de acción, compromisos y decisiones (~22000 caracteres)
+        # 2. Extractos intermedios con palabras de accion, compromisos y decisiones (~22000 caracteres)
         action_keywords = [
             'acuerd', 'comprom', 'hacer', 'revis', 'enviar', 'pago', 'entrega', 'mañana',
             'semana', 'tarea', 'responsable', 'decidi', 'conclusi', 'aprob', 'confirm',
@@ -109,16 +109,16 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
         if head:
             combined_parts.append("\n".join(head))
         if middle:
-            combined_parts.append("\n--- [DISCUSIÓN DE TEMAS, ACUERDOS Y COMPROMISOS] ---\n" + "\n".join(middle))
+            combined_parts.append("\n--- [DISCUSION DE TEMAS, ACUERDOS Y COMPROMISOS] ---\n" + "\n".join(middle))
         if tail:
-            combined_parts.append("\n--- [CONCLUSIONES Y PRÓXIMOS PASOS] ---\n" + "\n".join(tail))
+            combined_parts.append("\n--- [CONCLUSIONES Y PROXIMOS PASOS] ---\n" + "\n".join(tail))
 
         result = "\n\n".join(combined_parts)
         return result[:max_chars]
 
     @staticmethod
     def get_ollama_models(host="http://localhost:11434"):
-        """Detecta dinámicamente los modelos instalados en Ollama."""
+        """Detecta dinamicamente los modelos instalados en Ollama."""
         available = []
         try:
             r = requests.get(f"{host}/api/tags", timeout=2.0)
@@ -131,34 +131,128 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
         return available
 
     @staticmethod
-    def get_available_models(ollama_host="http://localhost:11434", gemini_key=""):
-        """Lista consolidada de todos los motores de IA disponibles (Gemini + Ollama + Offline)."""
-        available = []
+    def get_gemini_models_raw(api_key=""):
+        """Consulta en tiempo real a Google AI Studio los modelos de texto puros, filtrando TTS/Images/Embeddings."""
+        if not api_key or not api_key.strip():
+            return []
+        try:
+            r = requests.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key.strip()}", timeout=4.0)
+            if r.status_code == 200:
+                data = r.json()
+                models = data.get('models', [])
+                valid_models = []
+                for m in models:
+                    methods = m.get('supportedGenerationMethods', [])
+                    name = m.get('name', '').replace('models/', '')
+                    low = name.lower()
+                    
+                    # Filtrar exclusivamente modelos para generación de texto/actas
+                    if 'generateContent' not in methods:
+                        continue
+                    # Descartar modelos de audio/tts, imágenes o herramientas internas
+                    if any(bad in low for bad in ['tts', 'image', 'nano-banana', 'embed', 'imagen', 'aqa', 'robotics', 'customtools']):
+                        continue
+                        
+                    disp_name = m.get('displayName', name)
+                    valid_models.append({
+                        "id": name,
+                        "name": f"✨ {name} ({disp_name})",
+                        "display": disp_name
+                    })
+                return valid_models
+        except Exception:
+            pass
+        return [
+            {"id": "gemini-3.1-pro-preview", "name": "✨ gemini-3.1-pro-preview (Gemini 3.1 Pro Preview)", "display": "Gemini 3.1 Pro Preview"},
+            {"id": "gemini-3-flash-preview", "name": "✨ gemini-3-flash-preview (Gemini 3 Flash Preview)", "display": "Gemini 3 Flash Preview"},
+            {"id": "gemini-flash-latest", "name": "✨ gemini-flash-latest (Gemini Flash Latest)", "display": "Gemini Flash Latest"},
+            {"id": "gemini-pro-latest", "name": "✨ gemini-pro-latest (Gemini Pro Latest)", "display": "Gemini Pro Latest"},
+            {"id": "gemini-2.5-pro", "name": "✨ gemini-2.5-pro (Gemini 2.5 Pro)", "display": "Gemini 2.5 Pro"},
+            {"id": "gemini-2.5-flash", "name": "✨ gemini-2.5-flash (Gemini 2.5 Flash)", "display": "Gemini 2.5 Flash"}
+        ]
 
-        # Modelos de Google Gemini (Google AI Studio)
+    @staticmethod
+    def get_gemini_models(api_key=""):
+        """Lista plana de modelos Gemini válidos."""
+        raw = MeetingActaSummarizer.get_gemini_models_raw(api_key=api_key)
+        return [m['name'] for m in raw]
+
+    @staticmethod
+    def get_structured_models(ollama_host="http://localhost:11434", gemini_key=""):
+        """Retorna los modelos organizados por grupos: Recomendados (Top Tier), Nube (Otros), Locales (Ollama) y Offline."""
+        recommended = []
+        cloud_other = []
+        local_models = []
+
+        # 1. Google Gemini Cloud Models
         if gemini_key and gemini_key.strip():
-            available.append("✨ Gemini 2.0 Flash (Google AI Studio - 1M Contexto)")
-            available.append("✨ Gemini 1.5 Flash (Google AI Studio - 1M Contexto)")
-            available.append("✨ Gemini 1.5 Pro (Google AI Studio - 2M Contexto)")
+            raw_gemini = MeetingActaSummarizer.get_gemini_models_raw(api_key=gemini_key)
+            for m in raw_gemini:
+                m_id = m['id'].lower()
+                # Priorizar los modelos más capaces y recientes como Recomendados
+                is_top = any(k in m_id for k in [
+                    '3.1-pro', '3-pro', '3-flash', 'flash-latest', 'pro-latest',
+                    '2.5-pro', '2.5-flash', '2.0-flash', '2.0-pro'
+                ])
+                if is_top and 'lite' not in m_id:
+                    recommended.append({
+                        "value": m['name'],
+                        "label": f"⭐ {m['id']} — {m['display']}",
+                        "is_recommended": True
+                    })
+                else:
+                    cloud_other.append({
+                        "value": m['name'],
+                        "label": f"☁️ {m['id']} ({m['display']})"
+                    })
 
-        # Modelos locales de Ollama
-        ollama_models = MeetingActaSummarizer.get_ollama_models(host=ollama_host)
-        if ollama_models:
-            available.extend(ollama_models)
-        else:
-            if not (gemini_key and gemini_key.strip()):
-                available.append("⚠️ Ollama Desconectado (Configura Gemini en Ajustes)")
+        # 2. Ollama Local Models
+        ollama_raw = MeetingActaSummarizer.get_ollama_models(host=ollama_host)
+        for om in ollama_raw:
+            om_clean = om.replace("🦙 Ollama: ", "").strip()
+            is_rec_local = any(k in om_clean.lower() for k in ['qwen2.5:7b', 'llama3.1', 'llama3.3', 'llama3:latest'])
+            if is_rec_local:
+                recommended.append({
+                    "value": om,
+                    "label": f"⭐ {om_clean} (Local GPU)",
+                    "is_recommended": True
+                })
+            else:
+                local_models.append({
+                    "value": om,
+                    "label": f"🦙 {om_clean}"
+                })
 
-        available.append("📝 Resumen Heurístico Offline")
-        return available
+        return {
+            "recommended": recommended,
+            "cloud_other": cloud_other,
+            "local_models": local_models,
+            "offline": [{"value": "📝 Resumen Heuristico Offline", "label": "📝 Resumen Heurístico Offline"}]
+        }
+
+    @staticmethod
+    def get_available_models(ollama_host="http://localhost:11434", gemini_key=""):
+        """Lista consolidada plana para compatibilidad."""
+        structured = MeetingActaSummarizer.get_structured_models(ollama_host=ollama_host, gemini_key=gemini_key)
+        flat = []
+        for item in structured.get('recommended', []):
+            flat.append(item['value'])
+        for item in structured.get('cloud_other', []):
+            flat.append(item['value'])
+        for item in structured.get('local_models', []):
+            flat.append(item['value'])
+        if not flat and not (gemini_key and gemini_key.strip()):
+            flat.append("⚠️ Ollama Desconectado (Configura Gemini en Ajustes)")
+        flat.append("📝 Resumen Heuristico Offline")
+        return flat
 
     # =========================================================================
     # GOOGLE GEMINI API ENGINE (GOOGLE AI STUDIO)
     # =========================================================================
     @staticmethod
-    def stream_summary_gemini(transcript: str, title: str = "Reunión", duration: str = "N/A",
+    def stream_summary_gemini(transcript: str, title: str = "Reunion", duration: str = "N/A",
                               participants: str = "Hablantes detectados",
-                              model_name: str = "gemini-2.0-flash", api_key: str = ""):
+                              model_name: str = "gemini-2.5-flash", api_key: str = ""):
         """Genera el Acta Oficial transmitiendo tokens en tiempo real desde Google Gemini API."""
         if not api_key or not api_key.strip():
             yield {"token": "❌ Se requiere una API Key de Google Gemini. Configúrala en la pestaña de Ajustes.", "done": True}
@@ -168,19 +262,23 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
             yield {"token": "⚠️ La transcripción está vacía.", "done": True}
             return
 
-        # Limpieza de nombre de modelo
-        clean_model = "gemini-2.0-flash"
-        if "1.5 Pro" in model_name or "gemini-1.5-pro" in model_name:
-            clean_model = "gemini-1.5-pro"
-        elif "1.5 Flash" in model_name or "gemini-1.5-flash" in model_name:
-            clean_model = "gemini-1.5-flash"
+        # Limpieza y extracción dinámica del nombre del modelo
+        clean_model = model_name.replace("✨", "").replace("⭐", "").replace("☁️", "").strip()
+        if "(" in clean_model:
+            clean_model = clean_model.split("(")[0].strip()
+        if "—" in clean_model:
+            clean_model = clean_model.split("—")[0].strip()
+        if "/" in clean_model:
+            clean_model = clean_model.split("/")[-1].strip()
+        if not clean_model:
+            clean_model = "gemini-2.5-flash"
 
         prompt = MeetingActaSummarizer.ACTA_PROMPT_TEMPLATE.format(
             title=title,
             date="Hoy",
             duration=duration,
             participants=participants,
-            transcript=transcript.strip()  # Gemini soporta millones de tokens, texto completo sin recortes
+            transcript=transcript.strip()
         )
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:streamGenerateContent?alt=sse&key={api_key.strip()}"
@@ -194,7 +292,7 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 4096
+                "maxOutputTokens": 8192
             }
         }
 
@@ -241,11 +339,15 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
     # OLLAMA LOCAL ENGINE
     # =========================================================================
     @staticmethod
-    def stream_summary_ollama(transcript: str, title: str = "Reunión", duration: str = "N/A",
+    def stream_summary_ollama(transcript: str, title: str = "Reunion", duration: str = "N/A",
                              participants: str = "Hablantes detectados",
                              model: str = "llama3:latest", host: str = "http://localhost:11434"):
         """Genera el Acta Oficial con Ollama transmitiendo tokens con timeout amplio y soporte de modelos locales."""
-        clean_model = model.replace("Ollama: ", "").strip()
+        clean_model = model.replace("🦙 Ollama: ", "").replace("🦙", "").replace("⭐", "").strip()
+        if "(" in clean_model:
+            clean_model = clean_model.split("(")[0].strip()
+        if "—" in clean_model:
+            clean_model = clean_model.split("—")[0].strip()
         optimized_text = MeetingActaSummarizer._optimize_context_for_ollama(transcript)
 
         if not optimized_text:
@@ -313,7 +415,7 @@ TRANSCRIPCIÓN COMPLETA DE LA SESIÓN:
                 yield {"token": fallback, "done": True}
 
     @staticmethod
-    def generate_heuristic_summary(transcript: str, title: str = "Reunión", duration: str = "N/A", participants: str = "Hablantes detectados"):
+    def generate_heuristic_summary(transcript: str, title: str = "Reunion", duration: str = "N/A", participants: str = "Hablantes detectados"):
         """Generador heurístico offline de emergencia."""
         clean_text = MeetingActaSummarizer._clean_transcript_text(transcript)
         lines = [line.strip() for line in clean_text.split('\n') if line.strip() and len(line.strip()) > 15]
