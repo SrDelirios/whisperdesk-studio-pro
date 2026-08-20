@@ -120,17 +120,53 @@ TRANSCRIPCION COMPLETA DE LA SESION:
 
     @staticmethod
     def get_ollama_models(host="http://localhost:11434"):
-        """Detecta dinamicamente los modelos instalados en Ollama."""
+        """Detecta dinámicamente los modelos instalados en Ollama y retorna sus nombres puros."""
         available = []
         try:
             r = requests.get(f"{host}/api/tags", timeout=2.0)
             if r.status_code == 200:
                 models = r.json().get('models', [])
                 for m in models:
-                    available.append(f"Ollama: {m['name']}")
+                    name = m.get('name', '')
+                    if name:
+                        available.append(name)
         except Exception:
             pass
         return available
+
+    @staticmethod
+    def clean_ollama_model_name(raw_name: str, host: str = "http://localhost:11434") -> str:
+        """Sanitiza y valida el nombre del modelo contra los modelos instalados en Ollama garantizando que no falle."""
+        if not raw_name:
+            raw_name = "qwen2.5:7b"
+        s = str(raw_name).strip()
+        # Eliminar emojis y caracteres decorativos al inicio
+        s = re.sub(r'^[^\w\.\:\-]+', '', s)
+        # Eliminar prefijos 'Ollama:' o 'ollama:'
+        s = re.sub(r'^(?:Ollama:\s*|ollama:\s*)', '', s, flags=re.IGNORECASE)
+        # Eliminar sufijos entre paréntesis ej. (Local GPU)
+        s = re.sub(r'\s*\([^)]*\).*$', '', s)
+        s = re.sub(r'\s*—.*$', '', s)
+        clean = s.strip()
+
+        # Validar contra los modelos realmente instalados en Ollama
+        installed = MeetingActaSummarizer.get_ollama_models(host=host)
+        if installed:
+            if clean in installed:
+                return clean
+            for m in installed:
+                if m.lower() == clean.lower():
+                    return m
+            for m in installed:
+                if clean.lower() in m.lower() or m.lower().startswith(clean.lower()):
+                    return m
+            # Fallback inteligente al modelo instalado más potente
+            for preferred in ['qwen2.5:7b', 'llama3.1:8b', 'llama3:latest', 'llama3.2:latest']:
+                if preferred in installed:
+                    return preferred
+            return installed[0]
+
+        return clean or "qwen2.5:7b"
 
     @staticmethod
     def get_gemini_models_raw(api_key=""):
@@ -144,7 +180,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                 models = data.get('models', [])
                 valid_models = []
                 
-                # Palabras prohibidas: modelos de audio/musica (lyria), imagenes (imagen), embeddings, lite o versiones deprecadas (2.5, 2.0, 1.5)
+                # Palabras prohibidas: modelos de audio/música (lyria), imágenes (imagen), embeddings, lite o versiones deprecadas (2.5, 2.0, 1.5)
                 exclude_keywords = [
                     'tts', 'image', 'imagen', 'lyria', 'gemma', 'nano-banana', 'embed', 'aqa',
                     'robotics', 'customtools', 'deep-research', 'computer-use', 'antigravity',
@@ -168,7 +204,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                         "display": disp_name
                     })
 
-                # Funcion de puntuacion para ordenar de mas reciente/capaz a menor
+                # Función de puntuación para ordenar de más reciente/capaz a menor
                 def score_model(m):
                     mid = m['id'].lower()
                     if '3.7' in mid: return 100
@@ -197,13 +233,13 @@ TRANSCRIPCION COMPLETA DE LA SESION:
 
     @staticmethod
     def get_gemini_models(api_key=""):
-        """Lista plana de modelos Gemini validos."""
+        """Lista plana de modelos Gemini válidos."""
         raw = MeetingActaSummarizer.get_gemini_models_raw(api_key=api_key)
         return [m['name'] for m in raw]
 
     @staticmethod
     def get_structured_models(ollama_host="http://localhost:11434", gemini_key=""):
-        """Retorna los modelos organizados por grupos limpios y destacados."""
+        """Retorna los modelos organizados con valores puros de ID."""
         recommended = []
         cloud_other = []
         local_models = []
@@ -213,7 +249,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             raw_gemini = MeetingActaSummarizer.get_gemini_models_raw(api_key=gemini_key)
             for m in raw_gemini:
                 recommended.append({
-                    "value": m['name'],
+                    "value": m['id'],
                     "label": f"⭐ {m['id']} — {m['display']}",
                     "is_recommended": True
                 })
@@ -221,18 +257,17 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         # 2. Ollama Local Models
         ollama_raw = MeetingActaSummarizer.get_ollama_models(host=ollama_host)
         for om in ollama_raw:
-            om_clean = om.replace("🦙 Ollama: ", "").strip()
-            is_rec_local = any(k in om_clean.lower() for k in ['qwen2.5:7b', 'llama3.1', 'llama3.3', 'llama3:latest'])
+            is_rec_local = any(k in om.lower() for k in ['qwen2.5:7b', 'llama3.1', 'llama3.3', 'llama3:latest'])
             if is_rec_local:
                 recommended.append({
                     "value": om,
-                    "label": f"⭐ {om_clean} (Local GPU)",
+                    "label": f"⭐ Ollama: {om} (Local GPU)",
                     "is_recommended": True
                 })
             else:
                 local_models.append({
                     "value": om,
-                    "label": f"🦙 {om_clean}"
+                    "label": f"🦙 Ollama: {om}"
                 })
 
         return {
@@ -355,11 +390,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                              participants: str = "Hablantes detectados",
                              model: str = "llama3:latest", host: str = "http://localhost:11434"):
         """Genera el Acta Oficial con Ollama transmitiendo tokens con timeout amplio y soporte de modelos locales."""
-        clean_model = model.replace("🦙 Ollama: ", "").replace("🦙", "").replace("⭐", "").strip()
-        if "(" in clean_model:
-            clean_model = clean_model.split("(")[0].strip()
-        if "—" in clean_model:
-            clean_model = clean_model.split("—")[0].strip()
+        clean_model = MeetingActaSummarizer.clean_ollama_model_name(model, host=host)
         optimized_text = MeetingActaSummarizer._optimize_context_for_ollama(transcript)
 
         if not optimized_text:
@@ -373,6 +404,15 @@ TRANSCRIPCION COMPLETA DE LA SESION:
             participants=participants,
             transcript=optimized_text
         )
+
+        # Calcular contexto dinámico optimizado para que quepa 100% en la VRAM de la GPU
+        char_len = len(optimized_text)
+        if char_len < 20000:
+            dyn_ctx = 8192
+        elif char_len < 50000:
+            dyn_ctx = 16384
+        else:
+            dyn_ctx = 32768
 
         has_streamed_any = False
         error_msg = None
@@ -388,8 +428,8 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     "options": {
                         "temperature": 0.2,
                         "top_p": 0.9,
-                        "num_ctx": 65536,
-                        "num_predict": 8192
+                        "num_ctx": dyn_ctx,
+                        "num_predict": 4096
                     }
                 },
                 stream=True,
@@ -418,6 +458,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         except Exception as e:
             error_msg = f"No se pudo comunicar con Ollama ({clean_model}): {str(e)}"
 
+        # Si falló Ollama, notificar y ofrecer fallback explícito
         if not has_streamed_any:
             fallback = MeetingActaSummarizer.generate_heuristic_summary(transcript, title=title, duration=duration, participants=participants)
             if error_msg:
