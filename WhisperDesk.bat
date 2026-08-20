@@ -1,8 +1,16 @@
 @echo off
-title WhisperDesk Pro
+title WhisperDesk
 cd /d "%~dp0"
-if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
-    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" "%~dp0WhisperDesk.pyw"
-) else (
-    python "%~dp0WhisperDesk.pyw"
+
+if exist "%~dp0.venv\Scripts\python.exe" (
+    start "" "%~dp0.venv\Scripts\python.exe" "%~dp0run_app.py"
+    exit /b 0
 )
+
+python -c "import flask, faster_whisper" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    call "%~dp0install.bat"
+    exit /b 0
+)
+
+python "%~dp0run_app.py"

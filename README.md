@@ -17,9 +17,32 @@
 
 ## 🌟 Descripción General
 
-**WhisperDesk Studio Pro** es una plataforma de escritorio de alto rendimiento diseñada para profesionales, empresas, periodistas y creadores de contenido que requieren transcribir audios y videos de cualquier duración con máxima precisión, privacidad 100% local (sin enviar datos a la nube) y generar Actas Oficiales de Sesión con Inteligencia Artificial en segundos.
+**WhisperDesk Studio Pro** es una plataforma de escritorio de alto rendimiento diseñada para profesionales, empresas, abogados, médicos, periodistas y creadores de contenido que requieren transcribir audios y videos de cualquier duración con máxima precisión, privacidad 100% local (sin enviar datos a la nube) y generar Actas Oficiales de Sesión con Inteligencia Artificial en segundos.
 
-Impulsado por el motor neural **Faster-Whisper (CTranslate2)** con aceleración por Tensor Cores en GPUs NVIDIA (RTX 4070 / CUDA) y sincronizado con **Ollama** para redacción estructurada en tiempo real.
+Impulsado por el motor neural **Faster-Whisper (CTranslate2)** con aceleración por Tensor Cores en GPUs NVIDIA (CUDA) y sincronizado con **Ollama** para redacción estructurada en tiempo real.
+
+---
+
+## ⚡ Instalación Rápida en 1 Solo Clic (Para quien clona el repo)
+
+Si acabas de clonar el repositorio, no necesitas configurar entornos ni escribir comandos manuales:
+
+1. **Clona el repositorio:**
+```bash
+git clone https://github.com/SrDelirios/whisperdesk-studio-pro.git
+cd whisperdesk-studio-pro
+```
+
+2. **Ejecuta el Autoinstalador:**
+> **Haz doble clic en `install.bat`** (o en `WhisperDesk_Studio.bat`).
+
+El script inteligente realizará automáticamente todo lo siguiente:
+- ✅ Verifica que Python esté instalado.
+- ✅ Crea un entorno virtual aislado (`.venv`).
+- ✅ Detecta automáticamente si tienes tarjeta gráfica NVIDIA (`nvidia-smi`) e instala PyTorch con soporte **CUDA 12.1** (o modo CPU optimizado).
+- ✅ Instala todas las dependencias de `requirements.txt`.
+- ✅ Comprueba **FFmpeg** y lo configura localmente si no está en el sistema.
+- ✅ Genera un acceso directo en tu Escritorio e inicia la aplicación.
 
 ---
 
@@ -88,38 +111,7 @@ graph TD
 - **GPU (Recomendada):** NVIDIA RTX con soporte CUDA 12.x (Compatible también con CPU)
 - **Software Requerido:**
   - Python 3.10 o superior
-  - [FFmpeg](https://ffmpeg.org/) añadido al `PATH` del sistema
   - [Ollama](https://ollama.ai/) (Opcional, para resúmenes con IA Local como `qwen2.5:latest` o `llama3.2:latest`)
-
----
-
-## 📦 Instalación Rápida
-
-1. **Clonar el Repositorio:**
-```bash
-git clone https://github.com/SrDelirios/whisperdesk-studio-pro.git
-cd whisperdesk-studio-pro
-```
-
-2. **Crear Entorno Virtual e Instalar Dependencias:**
-```bash
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-3. **Instalar PyTorch con Aceleración CUDA (para GPU NVIDIA):**
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-```
-
-4. **Ejecutar la Aplicación:**
-- **Modo Aplicación Nativa (Recomendado):** Doble clic en `WhisperDesk.pyw` o `WhisperDesk_Studio.bat`.
-- **Modo Terminal:**
-```bash
-python app.py
-```
-Abre tu navegador en `http://127.0.0.1:54123`.
 
 ---
 
@@ -127,6 +119,9 @@ Abre tu navegador en `http://127.0.0.1:54123`.
 
 ```
 whisperdesk-studio-pro/
+├── install.bat              # Autoinstalador 1-clic (detecta GPU/CPU y configura .venv)
+├── WhisperDesk_Studio.bat   # Lanzador inteligente de la aplicación
+├── WhisperDesk.bat          # Lanzador modo navegador clásico
 ├── app.py                   # Servidor API Flask con Server-Sent Events (SSE)
 ├── database.py              # Administrador SQLite con WAL mode y migración
 ├── transcriber.py           # Motor Faster-Whisper GPU con auto-purga de VRAM
