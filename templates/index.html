@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhisperDesk Studio Pro</title>
+    
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="shortcut icon" href="/static/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/icon.png">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- Global Drag & Drop Overlay -->
+    <div id="global-drag-overlay" class="global-drag-overlay hidden">
+        <div class="global-drag-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+        </div>
+        <div class="global-drag-title">Soltar archivo multimedia</div>
+        <div class="global-drag-sub">El archivo se cargará y optimizará automáticamente para Whisper</div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal Renombrar / Crear Proyecto -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title">Título del Diálogo</h3>
+                <button id="modal-close" class="btn-icon-small" aria-label="Cerrar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="modal-input" class="custom-input" placeholder="Escribe aquí...">
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn-secondary">Cancelar</button>
+                <button id="modal-confirm" class="btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. SLIM ICON RAIL (60px) -->
+    <nav class="app-rail">
+        <!-- Logo Badge -->
+        <div class="rail-logo" title="WhisperDesk Studio Pro v2.0">
+            <div class="logo-mark">W</div>
+        </div>
+
+        <!-- Rail Main Nav Items -->
+        <div class="rail-nav">
+            <button id="nav-studio" class="rail-btn active" title="Estudio de Transcripción">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                </svg>
+            </button>
+
+            <button id="nav-history" class="rail-btn" title="Historial de Sesiones">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </button>
+
+            <button id="nav-actas" class="rail-btn" title="Actas Oficiales (IA)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </button>
+
+            <button id="nav-settings" class="rail-btn" title="Configuración del Sistema">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Rail Bottom Actions -->
+        <div class="rail-bottom">
+            <button id="nav-help" class="rail-btn" title="Ayuda & Documentación">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 2. MAIN APP SHELL -->
+    <div class="app-shell">
+        
+        <!-- TOP APP HEADER -->
+        <header class="app-topbar">
+            <!-- Left Branding & Context -->
+            <div class="topbar-left">
+                <span class="app-name">WhisperDesk Studio</span>
+                <span class="version-tag">v2.0 Pro</span>
+                <span class="divider">/</span>
+                <span id="active-session-name" class="session-crumb">Sesión Activa</span>
+            </div>
+
+            <!-- Center Floating Hardware Status Capsule -->
+            <div class="topbar-center">
+                <div class="status-capsule">
+                    <!-- CUDA Status -->
+                    <div id="cuda-status-badge" class="capsule-pill" title="Aceleración NVIDIA CUDA">
+                        <span class="status-dot green"></span>
+                        <span id="cuda-status-text" class="capsule-label">RTX 4070 (CUDA Activo)</span>
+                    </div>
+
+                    <span class="capsule-divider"></span>
+
+                    <!-- Ollama Status -->
+                    <div id="ollama-status-badge" class="capsule-pill" title="Servidor IA Ollama">
+                        <span id="ollama-dot" class="status-dot cyan"></span>
+                        <span id="ollama-status-text" class="capsule-label">Ollama Local</span>
+                    </div>
+
+                    <!-- Connect Ollama Action if offline -->
+                    <button id="btn-quick-connect-ollama" class="capsule-btn hidden" title="Iniciar servicio de Ollama">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span>Conectar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Project Selector & Utilities -->
+            <div class="topbar-right">
+                <div class="project-selector-box">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <select id="project-selector" class="project-dropdown">
+                        <option value="">General</option>
+                    </select>
+                    <button id="btn-new-project" class="btn-icon-small" title="Crear Nuevo Proyecto">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- VIEW 1: STUDIO PRINCIPAL -->
+        <main id="view-studio" class="app-main-view studio-layout active">
+            
+            <!-- LEFT CONTROL PANEL (340px) -->
+            <aside class="studio-sidebar">
+                <div class="sidebar-scrollable">
+                    
+                    <!-- Source Segmented Switcher -->
+                    <div class="source-segmented">
+                        <button id="tab-local" class="source-tab active">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span>Archivo Local</span>
+                        </button>
+                        <button id="tab-youtube" class="source-tab">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                            </svg>
+                            <span>Enlace YouTube</span>
+                        </button>
+                    </div>
+
+                    <!-- Local Upload / Drag & Drop Aura Zone -->
+                    <div id="local-upload-box" class="source-panel">
+                        <div id="drop-zone" class="aura-dropzone">
+                            <div class="dropzone-inner">
+                                <div class="dropzone-icon-circle">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <h4 class="dropzone-title">Explorar archivo multimedia</h4>
+                                <p class="dropzone-subtitle">o arrastra tu audio/video aquí (0s)</p>
+                                <span class="dropzone-formats">MP3, WAV, FLAC, M4A, MP4, MKV (Hasta 500GB)</span>
+                                <input type="file" id="file-input" hidden accept=".mp4,.mkv,.avi,.mov,.wmv,.flv,.webm,.mp3,.wav,.flac,.m4a,.ogg">
+                            </div>
+                        </div>
+
+                        <!-- Upload & Conversion Status Card -->
+                        <div id="upload-progress-card" class="upload-progress-card hidden">
+                            <div class="upload-progress-header">
+                                <span id="upload-status-title" class="upload-status-title">
+                                    <span class="spinner-icon"></span>
+                                    Subiendo archivo...
+                                </span>
+                                <span id="upload-percentage" class="upload-percentage">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div id="upload-bar-fill" class="upload-bar-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="upload-progress-meta">
+                                <span id="upload-bytes-text" class="upload-bytes-text">0 MB / 0 MB</span>
+                                <span id="upload-speed-text" class="upload-speed-text">-- MB/s</span>
+                            </div>
+                        </div>
+
+                        <!-- File Loaded Card -->
+                        <div id="file-loaded-card" class="file-loaded-card hidden">
+                            <div class="file-loaded-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 18V5l12-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="18" cy="16" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="file-loaded-info">
+                                <span id="file-loaded-name" class="file-loaded-title">archivo.mp3</span>
+                                <span id="file-loaded-meta" class="file-loaded-size">0.0 MB</span>
+                            </div>
+                            <button id="btn-remove-file" class="btn-icon-small" title="Quitar o cambiar archivo">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Upload & Conversion Error Card -->
+                        <div id="upload-error-card" class="upload-error-card hidden">
+                            <div class="upload-error-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
+                            <div class="upload-error-info">
+                                <span class="upload-error-title">Error al procesar archivo</span>
+                                <span id="upload-error-msg" class="upload-error-msg">No se pudo cargar</span>
+                            </div>
+                            <button id="btn-retry-upload" class="btn-retry-small">Reintentar</button>
+                        </div>
+                    </div>
+
+                    <!-- YouTube URL Panel -->
+                    <div id="youtube-upload-box" class="source-panel hidden">
+                        <div class="form-group">
+                            <label class="form-label">URL del Video de YouTube</label>
+                            <input type="text" id="yt-url-input" class="custom-input" placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+                        <button id="btn-fetch-yt" class="btn-secondary full-width">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Extraer Audio de YouTube</span>
+                        </button>
+                    </div>
+
+                    <!-- Session Metadata Section -->
+                    <div class="sidebar-section">
+                        <div class="form-group">
+                            <label class="form-label">Nombre de la Sesión (Opcional)</label>
+                            <input type="text" id="custom-session-name" class="custom-input" placeholder="Ej: Reunion_Estrategia_Q3">
+                        </div>
+                    </div>
+
+                    <!-- Motor Configuration -->
+                    <div class="sidebar-section">
+                        <div class="section-header-label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                            <span>Configuración del Motor</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Modelo Whisper GPU</label>
+                            <select id="whisper-model-select" class="custom-select">
+                                <option value="large-v3-turbo" selected>large-v3-turbo (Recomendado)</option>
+                                <option value="large-v3">large-v3 (Máxima Precisión)</option>
+                                <option value="medium">medium (Equilibrado)</option>
+                                <option value="small">small (Rápido)</option>
+                                <option value="base">base (Muy Rápido)</option>
+                                <option value="tiny">tiny (Ultra Ligero)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Idioma del Audio</label>
+                            <select id="language-select" class="custom-select">
+                                <option value="auto" selected>Detectar Automáticamente</option>
+                                <option value="es">Español</option>
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="pt">Português</option>
+                                <option value="it">Italiano</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Formato Inicial</label>
+                            <div class="format-pills" id="format-pills">
+                                <button type="button" class="format-pill active" data-fmt="txt">TXT</button>
+                                <button type="button" class="format-pill" data-fmt="srt">SRT</button>
+                                <button type="button" class="format-pill" data-fmt="vtt">VTT</button>
+                                <input type="hidden" id="selected-out-format" value="txt">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress / Ongoing State (Anti-Freeze) -->
+                    <div id="progress-card" class="progress-card hidden">
+                        <div class="progress-meta">
+                            <span id="progress-status-text" class="progress-status">
+                                <span class="spinner-icon"></span>
+                                Transcribiendo en GPU...
+                            </span>
+                            <span id="progress-time-counter" class="time-badge">00:00</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-actions">
+                            <span id="progress-percentage" class="time-badge">0%</span>
+                            <button id="btn-cancel-process" class="btn-danger-small">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                                <span>Cancelar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Action CTA Button -->
+                    <button id="btn-start-transcription" class="btn-primary-cta" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span>Iniciar Transcripción</span>
+                    </button>
+
+                </div>
+            </aside>
+
+            <!-- RIGHT WORKSPACE & TRANSCRIPT STUDIO (Flex-1) -->
+            <section class="studio-workspace">
+                
+                <!-- 1. AUDIO WAVEFORM SCRUBBER (Barra de Reproducción Interactiva) -->
+                <div id="audio-player-bar" class="audio-player-bar">
+                    <audio id="native-audio" preload="metadata" hidden></audio>
+                    
+                    <button id="btn-play-pause" class="player-btn" title="Reproducir / Pausar">
+                        <svg id="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <svg id="icon-pause" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                    </button>
+
+                    <div class="player-time">
+                        <span id="player-current-time">00:00</span>
+                        <span class="player-time-sep">/</span>
+                        <span id="player-duration-time">00:00</span>
+                    </div>
+
+                    <!-- Waveform Scrubber Track -->
+                    <div class="player-track-container" id="player-track-container">
+                        <div id="player-progress-fill" class="player-progress-fill"></div>
+                        <input type="range" id="player-scrubber" min="0" max="100" value="0" step="0.1" class="player-slider">
+                    </div>
+
+                    <!-- Playback Speed -->
+                    <div class="speed-selector">
+                        <button id="btn-speed-toggle" class="speed-btn" title="Velocidad de reproducción">1.0x</button>
+                    </div>
+
+                    <!-- Volume -->
+                    <div class="volume-box">
+                        <button id="btn-volume-mute" class="player-btn-small" title="Silenciar">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. WORKSPACE TOOLBAR -->
+                <div class="workspace-toolbar">
+                    <!-- Left View Switcher -->
+                    <div class="view-tabs">
+                        <button id="btn-view-speakers" class="view-tab active">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Hablantes</span>
+                        </button>
+
+                        <button id="btn-view-plain" class="view-tab">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="21" y1="10" x2="3" y2="10"></line>
+                                <line x1="21" y1="6" x2="3" y2="6"></line>
+                                <line x1="21" y1="14" x2="3" y2="14"></line>
+                                <line x1="21" y1="18" x2="3" y2="18"></line>
+                            </svg>
+                            <span>Texto Limpio</span>
+                        </button>
+
+                        <button id="btn-view-acta" class="view-tab">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <span>Acta Oficial (IA)</span>
+                        </button>
+                    </div>
+
+                    <!-- Right Actions: AI, Search, Copy, Export -->
+                    <div class="workspace-actions">
+                        <!-- AI Model Selector & Generate Acta Button -->
+                        <div class="ai-controls-group">
+                            <select id="ollama-model-select" class="ollama-select" title="Seleccionar modelo de IA Local">
+                                <option value="qwen2.5:latest">qwen2.5:latest</option>
+                            </select>
+                            <button id="btn-generate-acta" class="btn-emerald">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"></path>
+                                </svg>
+                                <span>Generar Acta</span>
+                            </button>
+                        </div>
+
+                        <span class="action-divider"></span>
+
+                        <button id="btn-copy-all" class="btn-secondary" title="Copiar todo el documento">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copiar</span>
+                        </button>
+
+                        <!-- Export Dropdown -->
+                        <div class="export-dropdown-box">
+                            <button id="btn-export-dropdown" class="btn-secondary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <span>Exportar</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div id="export-menu" class="dropdown-popover hidden">
+                                <button class="export-item" data-fmt="txt">Texto Plano (.txt)</button>
+                                <button class="export-item" data-fmt="srt">Subtítulos (.srt)</button>
+                                <button class="export-item" data-fmt="vtt">Subtítulos Web (.vtt)</button>
+                                <button class="export-item" data-fmt="md">Acta Markdown (.md)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. TRANSCRIPT VIEWER CONTENT AREA -->
+                <div class="transcript-viewport">
+                    
+                    <!-- Empty State -->
+                    <div id="workspace-empty" class="workspace-empty">
+                        <div class="empty-illustration">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                            </svg>
+                        </div>
+                        <h3>Estudio Listo para Transcribir</h3>
+                        <p>Selecciona o arrastra un archivo multimedia en el panel izquierdo para comenzar.</p>
+                    </div>
+
+                    <!-- View A: Speaker Diarization Dialogue Feed -->
+                    <div id="view-speakers-feed" class="dialogue-feed hidden"></div>
+
+                    <!-- View B: Plain Text View -->
+                    <div id="view-plain-text" class="plain-text-box hidden"></div>
+
+                    <!-- View C: Executive Meeting Minutes (Acta Oficial) -->
+                    <div id="view-acta-container" class="acta-container hidden"></div>
+
+                </div>
+
+            </section>
+        </main>
+
+        <!-- VIEW 2: HISTORIAL COMPLETO DE SESIONES -->
+        <section id="view-history" class="app-main-view full-view-container hidden">
+            <div class="full-view-header">
+                <div>
+                    <h2>Historial y Archivo de Sesiones</h2>
+                    <p class="full-view-sub">Explora, abre o exporta todas las transcripciones guardadas en tus proyectos.</p>
+                </div>
+                <div class="full-view-actions">
+                    <input type="text" id="history-search-input" class="custom-input search-input" placeholder="Buscar en historial...">
+                    <button id="btn-refresh-history" class="btn-secondary">Actualizar</button>
+                </div>
+            </div>
+            <div class="full-view-content">
+                <div id="full-history-grid" class="full-history-grid"></div>
+                <div id="full-history-empty" class="view-empty-state hidden">
+                    <div class="empty-illustration">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <h3>No hay sesiones en el historial</h3>
+                    <p>Las transcripciones que realices en el Estudio aparecerán aquí automáticamente.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: ACTAS OFICIALES (IA) -->
+        <section id="view-actas" class="app-main-view full-view-container hidden">
+            <div class="full-view-header">
+                <div>
+                    <h2>Actas Oficiales & Tareas</h2>
+                    <p class="full-view-sub">Informes ejecutivos, síntesis y compromisos generados por Inteligencia Artificial.</p>
+                </div>
+                <div class="full-view-actions">
+                    <button id="btn-copy-full-acta" class="btn-secondary">Copiar Acta</button>
+                    <button id="btn-download-full-acta" class="btn-primary">Descargar Markdown</button>
+                </div>
+            </div>
+            <div class="full-view-content">
+                <div id="full-acta-reader" class="full-acta-reader">
+                    <div id="full-acta-placeholder" class="view-empty-state">
+                        <div class="empty-illustration">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <h3>No hay ningún acta generada en la sesión actual</h3>
+                        <p>Transcribe un audio en el Estudio y haz clic en "Generar Acta" con Ollama para redactar el informe.</p>
+                    </div>
+                    <div id="full-acta-rendered" class="acta-rendered-document hidden"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: CONFIGURACIÓN DEL SISTEMA -->
+        <section id="view-settings" class="app-main-view full-view-container hidden">
+            <div class="full-view-header">
+                <div>
+                    <h2>Configuración del Sistema</h2>
+                    <p class="full-view-sub">Ajustes de aceleración por hardware, servidor de IA Local y carpetas de trabajo.</p>
+                </div>
+            </div>
+            <div class="full-view-content">
+                <div class="settings-grid">
+                    
+                    <!-- Card 1: GPU & Whisper -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="settings-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                    <rect x="9" y="9" width="6" height="6"></rect>
+                                    <line x1="9" y1="1" x2="9" y2="4"></line>
+                                    <line x1="15" y1="1" x2="15" y2="4"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Aceleración por GPU (NVIDIA CUDA)</h3>
+                                <span class="settings-card-sub">Motor neural Faster-Whisper</span>
+                            </div>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="settings-row">
+                                <span class="settings-label">Tarjeta Gráfica</span>
+                                <span id="cfg-gpu-name" class="settings-val badge-gpu">NVIDIA GeForce RTX 4070</span>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">Memoria VRAM Total</span>
+                                <span id="cfg-vram-val" class="settings-val">12.0 GB GDDR6X</span>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">Tipo de Cómputo</span>
+                                <span class="settings-val">float16 (Tensor Cores)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Ollama Local AI -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="settings-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.93V18a1 1 0 0 1-2 0v-1.07A6 6 0 0 1 6.07 12H5a1 1 0 0 1 0-2h1.07A6 6 0 0 1 11 4.07V3a1 1 0 0 1 2 0v1.07A6 6 0 0 1 17.93 10H19a1 1 0 0 1 0 2h-1.07A6 6 0 0 1 13 16.93z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Servidor Local de IA (Ollama)</h3>
+                                <span class="settings-card-sub">Modelos LLM para resumen y actas</span>
+                            </div>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="settings-row">
+                                <span class="settings-label">Estado de Ollama</span>
+                                <span id="cfg-ollama-status" class="settings-val badge-online">Conectado (http://localhost:11434)</span>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">Modelos Detectados</span>
+                                <span id="cfg-ollama-models-count" class="settings-val">3 modelos instalados</span>
+                            </div>
+                            <div class="settings-actions">
+                                <button id="btn-cfg-test-ollama" class="btn-secondary-small">Verificar Conexión</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Storage & Folders -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="settings-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Almacenamiento y Archivos</h3>
+                                <span class="settings-card-sub">Rutas de guardado y mantenimiento de disco</span>
+                            </div>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="settings-row-col">
+                                <span class="settings-label">Carpeta de Guardado de Transcripciones</span>
+                                <div class="settings-path-display">
+                                    <span id="cfg-output-path" class="settings-path-text" title="Ruta activa de guardado">Cargando ruta...</span>
+                                </div>
+                                <div class="settings-btn-row">
+                                    <button id="btn-cfg-change-output" class="btn-primary-small" title="Elegir una nueva carpeta en tu PC">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                        <span>Cambiar Carpeta...</span>
+                                    </button>
+                                    <button id="btn-cfg-reset-output" class="btn-secondary-small" title="Restablecer a la carpeta predeterminada">Restablecer</button>
+                                    <button id="btn-cfg-open-output" class="btn-secondary-small" title="Abrir en el Explorador de Windows">Abrir en Explorador</button>
+                                </div>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">Archivos Temporales ('uploads')</span>
+                                <button id="btn-cfg-clean-temp" class="btn-secondary-small">Limpiar Temporales</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 5: AYUDA Y GUÍA -->
+        <section id="view-help" class="app-main-view full-view-container hidden">
+            <div class="full-view-header">
+                <div>
+                    <h2>Ayuda y Documentación</h2>
+                    <p class="full-view-sub">Guía de uso, modelos recomendados y atajos de teclado de WhisperDesk Studio Pro.</p>
+                </div>
+            </div>
+            <div class="full-view-content">
+                <div class="help-content-card">
+                    <h3>🚀 Flujo de Trabajo Rápido</h3>
+                    <ol class="help-steps">
+                        <li><strong>Carga de Archivo:</strong> Arrastra cualquier video o audio a la ventana o haz clic en "Explorar archivo multimedia". El enlace es instantáneo (0 segundos).</li>
+                        <li><strong>Configuración:</strong> Selecciona el modelo de Whisper (se recomienda <code>large-v3-turbo</code> para RTX 4070) y el idioma.</li>
+                        <li><strong>Transcripción en Vivo:</strong> Haz clic en "Iniciar Transcripción". El texto aparecerá escribiéndose en tiempo real en la pantalla.</li>
+                        <li><strong>Diarización y Texto Limpio:</strong> Alterna entre la pestaña <em>Hablantes</em> para ver el diálogo estructurado y <em>Texto Limpio</em> para párrafos naturales.</li>
+                        <li><strong>Acta Oficial con IA:</strong> Haz clic en "Generar Acta" para que Ollama redacte un informe ejecutivo con tareas y acuerdos clave.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Scripts de Lógica y Control -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
