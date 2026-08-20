@@ -60,8 +60,8 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         return cleaned.strip()
 
     @staticmethod
-    def _optimize_context_for_ollama(transcript: str, max_chars: int = 80000) -> str:
-        """Prepara el contexto para Ollama local optimizando memoria sin perder partes vitales."""
+    def _optimize_context_for_ollama(transcript: str, max_chars: int = 250000) -> str:
+        """Prepara el contexto para Ollama local optimizando memoria para audios de hasta 5-6 horas sin perder partes vitales."""
         clean = transcript.strip()
         if len(clean) <= max_chars:
             return clean
@@ -70,40 +70,41 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         if not lines:
             return clean[:max_chars]
 
-        # 1. Apertura e introduccion (primeros 16000 caracteres)
+        # 1. Apertura e introduccion (primeros 40000 caracteres)
         head = []
         head_len = 0
         for l in lines:
             head.append(l)
             head_len += len(l)
-            if head_len >= 16000:
+            if head_len >= 40000:
                 break
 
-        # 2. Extractos intermedios con palabras de accion, compromisos y decisiones (~44000 caracteres)
+        # 2. Extractos intermedios con palabras de accion, compromisos y decisiones (~150000 caracteres)
         action_keywords = [
             'acuerd', 'comprom', 'hacer', 'revis', 'enviar', 'pago', 'entrega', 'mañana',
             'semana', 'tarea', 'responsable', 'decidi', 'conclusi', 'aprob', 'confirm',
             'defin', 'objetivo', 'desembol', 'proyecto', 'presupuesto', 'fase', 'precio',
             'contrato', 'equipo', 'cliente', 'desarrollo', 'tiempo', 'fecha', 'costo',
-            'mamut', 'plazo', 'informe', 'taller', 'archivo', 'digitaliz'
+            'mamut', 'plazo', 'informe', 'taller', 'archivo', 'digitaliz', 'problema',
+            'solucion', 'riesgo', 'propuesta', 'cronograma', 'rubro', 'financ'
         ]
         middle = []
         middle_len = 0
-        mid_lines = lines[len(head):-50] if len(lines) > 100 else []
+        mid_lines = lines[len(head):-100] if len(lines) > 200 else []
         for l in mid_lines:
             if any(k in l.lower() for k in action_keywords):
                 middle.append(l)
                 middle_len += len(l)
-                if middle_len >= 44000:
+                if middle_len >= 150000:
                     break
 
-        # 3. Cierre y conclusiones (~20000 caracteres)
+        # 3. Cierre y conclusiones (~60000 caracteres)
         tail = []
         tail_len = 0
-        for l in reversed(lines[-50:]):
+        for l in reversed(lines[-100:]):
             tail.insert(0, l)
             tail_len += len(l)
-            if tail_len >= 20000:
+            if tail_len >= 60000:
                 break
 
         combined_parts = []
@@ -133,7 +134,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
 
     @staticmethod
     def get_gemini_models_raw(api_key=""):
-        """Consulta en tiempo real a Google AI Studio los modelos de texto puros, filtrando TTS/Images/Embeddings."""
+        """Consulta en tiempo real a Google AI Studio y filtra estrictamente solo los modelos flagship de texto puro."""
         if not api_key or not api_key.strip():
             return []
         try:
@@ -142,6 +143,14 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                 data = r.json()
                 models = data.get('models', [])
                 valid_models = []
+                
+                # Palabras prohibidas: modelos de audio/musica (lyria), imagenes (imagen), embeddings, lite o versiones deprecadas (2.5, 2.0, 1.5)
+                exclude_keywords = [
+                    'tts', 'image', 'imagen', 'lyria', 'gemma', 'nano-banana', 'embed', 'aqa',
+                    'robotics', 'customtools', 'deep-research', 'computer-use', 'antigravity',
+                    '2.5', '2.0', '1.5', '1.0', 'lite', 'omni'
+                ]
+
                 for m in models:
                     methods = m.get('supportedGenerationMethods', [])
                     name = m.get('name', '').replace('models/', '')
@@ -149,7 +158,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     
                     if 'generateContent' not in methods:
                         continue
-                    if any(bad in low for bad in ['tts', 'image', 'nano-banana', 'embed', 'imagen', 'aqa', 'robotics', 'customtools']):
+                    if any(bad in low for bad in exclude_keywords):
                         continue
                         
                     disp_name = m.get('displayName', name)
@@ -158,51 +167,56 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                         "name": f"✨ {name} ({disp_name})",
                         "display": disp_name
                     })
+
+                # Funcion de puntuacion para ordenar de mas reciente/capaz a menor
+                def score_model(m):
+                    mid = m['id'].lower()
+                    if '3.7' in mid: return 100
+                    if '3.6' in mid: return 90
+                    if '3.1-pro' in mid: return 85
+                    if '3-pro' in mid: return 80
+                    if '3-flash' in mid: return 75
+                    if '3.5-flash' in mid: return 70
+                    if 'flash-latest' in mid: return 65
+                    if 'pro-latest' in mid: return 60
+                    return 10
+
+                valid_models.sort(key=score_model, reverse=True)
                 return valid_models
         except Exception:
             pass
+
         return [
+            {"id": "gemini-3.7-flash", "name": "✨ gemini-3.7-flash (Gemini 3.7 Flash)", "display": "Gemini 3.7 Flash"},
+            {"id": "gemini-3.6-flash", "name": "✨ gemini-3.6-flash (Gemini 3.6 Flash)", "display": "Gemini 3.6 Flash"},
             {"id": "gemini-3.1-pro-preview", "name": "✨ gemini-3.1-pro-preview (Gemini 3.1 Pro Preview)", "display": "Gemini 3.1 Pro Preview"},
             {"id": "gemini-3-flash-preview", "name": "✨ gemini-3-flash-preview (Gemini 3 Flash Preview)", "display": "Gemini 3 Flash Preview"},
             {"id": "gemini-flash-latest", "name": "✨ gemini-flash-latest (Gemini Flash Latest)", "display": "Gemini Flash Latest"},
-            {"id": "gemini-pro-latest", "name": "✨ gemini-pro-latest (Gemini Pro Latest)", "display": "Gemini Pro Latest"},
-            {"id": "gemini-2.5-pro", "name": "✨ gemini-2.5-pro (Gemini 2.5 Pro)", "display": "Gemini 2.5 Pro"},
-            {"id": "gemini-2.5-flash", "name": "✨ gemini-2.5-flash (Gemini 2.5 Flash)", "display": "Gemini 2.5 Flash"}
+            {"id": "gemini-pro-latest", "name": "✨ gemini-pro-latest (Gemini Pro Latest)", "display": "Gemini Pro Latest"}
         ]
 
     @staticmethod
     def get_gemini_models(api_key=""):
-        """Lista plana de modelos Gemini válidos."""
+        """Lista plana de modelos Gemini validos."""
         raw = MeetingActaSummarizer.get_gemini_models_raw(api_key=api_key)
         return [m['name'] for m in raw]
 
     @staticmethod
     def get_structured_models(ollama_host="http://localhost:11434", gemini_key=""):
-        """Retorna los modelos organizados por grupos: Recomendados (Top Tier), Nube (Otros), Locales (Ollama) y Offline."""
+        """Retorna los modelos organizados por grupos limpios y destacados."""
         recommended = []
         cloud_other = []
         local_models = []
 
-        # 1. Google Gemini Cloud Models
+        # 1. Google Gemini Flagship Models
         if gemini_key and gemini_key.strip():
             raw_gemini = MeetingActaSummarizer.get_gemini_models_raw(api_key=gemini_key)
             for m in raw_gemini:
-                m_id = m['id'].lower()
-                is_top = any(k in m_id for k in [
-                    '3.1-pro', '3-pro', '3-flash', 'flash-latest', 'pro-latest',
-                    '2.5-pro', '2.5-flash', '2.0-flash', '2.0-pro'
-                ])
-                if is_top and 'lite' not in m_id:
-                    recommended.append({
-                        "value": m['name'],
-                        "label": f"⭐ {m['id']} — {m['display']}",
-                        "is_recommended": True
-                    })
-                else:
-                    cloud_other.append({
-                        "value": m['name'],
-                        "label": f"☁️ {m['id']} ({m['display']})"
-                    })
+                recommended.append({
+                    "value": m['name'],
+                    "label": f"⭐ {m['id']} — {m['display']}",
+                    "is_recommended": True
+                })
 
         # 2. Ollama Local Models
         ollama_raw = MeetingActaSummarizer.get_ollama_models(host=ollama_host)
@@ -250,7 +264,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
     @staticmethod
     def stream_summary_gemini(transcript: str, title: str = "Reunion", duration: str = "N/A",
                               participants: str = "Hablantes detectados",
-                              model_name: str = "gemini-2.5-flash", api_key: str = ""):
+                              model_name: str = "gemini-flash-latest", api_key: str = ""):
         """Genera el Acta Oficial transmitiendo tokens en tiempo real desde Google Gemini API."""
         if not api_key or not api_key.strip():
             yield {"token": "❌ Se requiere una API Key de Google Gemini. Configúrala en la pestaña de Ajustes.", "done": True}
@@ -268,7 +282,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         if "/" in clean_model:
             clean_model = clean_model.split("/")[-1].strip()
         if not clean_model:
-            clean_model = "gemini-2.5-flash"
+            clean_model = "gemini-flash-latest"
 
         prompt = MeetingActaSummarizer.ACTA_PROMPT_TEMPLATE.format(
             title=title,
@@ -294,7 +308,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         }
 
         try:
-            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, stream=True, timeout=(10, 180))
+            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, stream=True, timeout=(15, 180))
             if r.status_code != 200:
                 err_text = r.text
                 try:
@@ -306,23 +320,24 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                 return
 
             has_tokens = False
-            for line in r.iter_lines():
-                if line:
-                    line_str = line.decode('utf-8', errors='ignore').strip()
-                    if line_str.startswith('data: '):
-                        raw_json = line_str[6:].strip()
-                        try:
-                            chunk = json.loads(raw_json)
-                            candidates = chunk.get('candidates', [])
-                            if candidates and 'content' in candidates[0]:
-                                parts = candidates[0]['content'].get('parts', [])
-                                for p in parts:
-                                    t = p.get('text', '')
-                                    if t:
-                                        has_tokens = True
-                                        yield {"token": t, "done": False}
-                        except Exception:
-                            pass
+            for raw_line in r.iter_lines():
+                if not raw_line:
+                    continue
+                line = raw_line.decode('utf-8', errors='ignore').strip()
+                if line.startswith('data:'):
+                    raw_json = line[5:].strip()
+                    try:
+                        chunk = json.loads(raw_json)
+                        candidates = chunk.get('candidates', [])
+                        if candidates and 'content' in candidates[0]:
+                            parts = candidates[0]['content'].get('parts', [])
+                            for p in parts:
+                                t = p.get('text', '')
+                                if t:
+                                    has_tokens = True
+                                    yield {"token": t, "done": False}
+                    except Exception:
+                        pass
 
             if not has_tokens:
                 yield {"token": "⚠️ No se recibieron datos de Gemini API.", "done": True}
@@ -363,6 +378,7 @@ TRANSCRIPCION COMPLETA DE LA SESION:
         error_msg = None
 
         try:
+            # Timeout generoso (45s para carga en VRAM, 300s para streaming)
             r = requests.post(
                 f"{host}/api/generate",
                 json={
@@ -372,12 +388,12 @@ TRANSCRIPCION COMPLETA DE LA SESION:
                     "options": {
                         "temperature": 0.2,
                         "top_p": 0.9,
-                        "num_ctx": 32768,
+                        "num_ctx": 65536,
                         "num_predict": 8192
                     }
                 },
                 stream=True,
-                timeout=(45, 240)
+                timeout=(45, 300)
             )
 
             if r.status_code == 200:
